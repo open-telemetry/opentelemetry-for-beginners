@@ -1,0 +1,63 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  resource:
+    attributes:
+      - key: deployment.environment.name
+        value: local
+        action: insert
+      - key: host.arch
+        action: delete
+      - key: host.id
+        action: delete
+      - key: host.name
+        action: delete  
+      - key: process.command
+        action: delete
+      - key: process.command_args
+        action: delete
+      - key: process.executable.path
+        action: delete
+      - key: process.owner
+        action: delete
+      - key: process.pid
+        action: delete
+
+  attributes:
+    actions:
+      - key: http.user_agent
+        action: delete
+      - key: net.host.ip
+        action: delete
+      - key: net.peer.ip
+        action: delete
+      - key: net.host.port
+        action: delete
+      - key: net.peer.port
+        action: delete
+
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  debug:
+    verbosity: detailed
+
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource, attributes, batch]
+      exporters: [debug, otlp/jaeger]

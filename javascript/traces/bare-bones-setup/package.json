@@ -1,0 +1,19 @@
+{
+  "name": "o4b-js",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "OTEL_SERVICE_NAME=OTel4Beginners node --require ./instrumentation.js app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.62.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.203.0",
+    "@opentelemetry/sdk-node": "^0.203.0",
+    "express": "^5.1.0"
+  }
+}
