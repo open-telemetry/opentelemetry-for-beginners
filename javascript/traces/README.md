@@ -332,27 +332,37 @@ Now that traces are being generated and exported through the Collector, we can s
 
 ## Project folders 
 
-<img width="2560" height="1439" alt="Image" src="https://github.com/user-attachments/assets/c7333330-f10e-4535-9251-c4f2fc7f82d4" />
+<img width="2550" height="1434" alt="image" src="https://github.com/user-attachments/assets/0de6e8b5-ed8a-4480-aaed-06fbddc99218" />
 
 1. `bare-bones-setup/` (**Episode 4**)
 - Instruments the Roll the Dice app and sends traces to the OpenTelemetry Collector.
 - The Collector forwards traces to Jaeger for storage and visualization with no additional processing.
 
-<img width="2558" height="1440" alt="Image" src="https://github.com/user-attachments/assets/26f24e22-e97c-4b67-85c4-c8145f541472" />
+<img width="2553" height="1435" alt="image" src="https://github.com/user-attachments/assets/6e65b7ef-3371-451d-bd88-37bd267cb142" />
 
 2. `add-processors/` (**Current episode**)
 - Uses the same setup as `bare-bones-setup`, but applies processors to incoming traces.
 - These processors enrich resource metadata, remove low-value or sensitive attributes, and batch traces for more efficient exporting.
   
-**Navigate to the `add-processors` folder to apply the processor configuration:**
+**In the terminal running the Roll the Dice app, stop the app and navigate to the `add-processors` folder:**
 ```
-# from the javascript/traces directory
+#stop the app
+CTRL + C
+
+# navigate to the add-processors folder
 cd ../add-processors
+
+#install dependencies and start the app
+npm install
+npm start
 ``` 
 **In the terminal running Docker, stop and restart the OpenTelemetry Collector and Jaeger.**
 ```
 # stop the running containers
 CTRL + C
+
+# navigate to the add-processors folder
+cd ../add-processors
 
 # restart with the updated configuration
 docker compose up --build 
