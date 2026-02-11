@@ -1,0 +1,21 @@
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "14250:14250"   # Jaeger grpc (optional)
+      # Remove 4317 port from jaeger to avoid conflict
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+      COLLECTOR_OTLP_GRPC_PORT: 4317
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./otel/otel-collector-config.yaml:/etc/otelcol/config.yaml
+    command: ["--config", "/etc/otelcol/config.yaml"]
+    ports:
+      - "4317:4317"  # only otel-collector uses 4317 on host
+      - "4318:4318"
+    depends_on:
+      - jaeger
