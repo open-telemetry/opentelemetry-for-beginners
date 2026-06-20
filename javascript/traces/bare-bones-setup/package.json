@@ -12,7 +12,7 @@
   "description": "",
   "dependencies": {
     "@opentelemetry/auto-instrumentations-node": "^0.62.0",
-    "@opentelemetry/exporter-trace-otlp-grpc": "^0.203.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.219.0",
     "@opentelemetry/sdk-node": "^0.203.0",
     "express": "^5.1.0"
   }
