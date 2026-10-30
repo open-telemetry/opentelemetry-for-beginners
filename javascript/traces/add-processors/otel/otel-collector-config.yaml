@@ -29,35 +29,36 @@ processors:
       - key: process.pid
         action: delete
 
-  attributes:
+  attributes/traces:
     actions:
-      - key: http.user_agent
+      - key: user_agent.original
         action: delete
-      - key: net.host.ip
+      - key: client.address
         action: delete
-      - key: net.peer.ip
+      - key: network.peer.address
         action: delete
-      - key: net.host.port
+      - key: network.peer.port
         action: delete
-      - key: net.peer.port
+      - key: server.port
         action: delete
-
-  batch:
-    timeout: 5s
-    send_batch_size: 512
 
 exporters:
   debug:
     verbosity: detailed
 
-  otlp/jaeger:
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
+    sending_queue:
+      sizer: items
+      batch:
+        flush_timeout: 5s
+        min_size: 512
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [resource, attributes, batch]
-      exporters: [debug, otlp/jaeger]
+      processors: [resource, attributes/traces]
+      exporters: [debug, otlp_grpc/jaeger]

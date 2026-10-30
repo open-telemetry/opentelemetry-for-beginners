@@ -12,7 +12,11 @@ const sdk = new opentelemetry.NodeSDK({
   traceExporter: new OTLPTraceExporter({
      url: 'http://localhost:4317', 
   }),
-  instrumentations: [getNodeAutoInstrumentations()],
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      '@opentelemetry/instrumentation-router': { enabled: false },
+    }),
+  ],
 });
 
 sdk.start();

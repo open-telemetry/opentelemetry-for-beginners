@@ -1,146 +1,267 @@
-# OpenTelemetry for Beginners - The JavaScript Journey
+# OpenTelemetry for Beginners - The JavaScript Journey (Traces)
 
 Getting started with OpenTelemetry can feel overwhelming, but this beginner series for JavaScript developers will guide you step by step.
 
-First, we’ll answer the question: What is OpenTelemetry?
+This guide is where the series begins. It covers what OpenTelemetry is, an overview of the pipelines we'll build, and the **traces** signal. From there, the [Metrics walkthrough](../metrics/README.md) and the [Logs walkthrough](../logs/README.md) build on everything we set up here.
 
-# Episode 1 - What is OpenTelemetry?
-🎬 Watch this video to learn what OpenTelemetry is and why it matters.
+## Prerequisites
 
-[![Watch the video](https://img.youtube.com/vi/iEEIabOha8U/0.jpg)]([https://www.youtube.com/watch?v=fZRwVwCvLAg](https://youtu.be/iEEIabOha8U))
+Before getting started, make sure you have installed:
+- [Node.js](https://nodejs.org/en/download/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/), which includes Docker Compose
 
-Now that you’ve covered the basics in Episode 1, let’s move on to Episode 2 to explore the architecture and objectives that will kickstart your trace pipeline.
-
-# Episode 2 - Overview: Kickstart Your Trace Pipeline with OpenTelemetry
-## Learning Environment Architecture
-<img width="1906" alt="image" src="https://github.com/user-attachments/assets/71773bfa-e488-4e8f-92fd-d36468827a75" />
-
-## Objectives 
-- Instrument a Node.js app using the Auto Instrumentation Module to generate traces and send them to the OpenTelemetry Collector.
-- Configure the OpenTelemetry Collector to receive, process, and export traces to the Jaeger backend.
-- Use the Jaeger UI to visualize and verify that the traces have been correctly processed.
-
-**Note:**
-- Docker runs the OTel Collector and Jaeger side by side with our app for easy setup and integration. 
-
-<img width="1918" alt="image" src="https://github.com/user-attachments/assets/a398be28-3bbc-4895-b343-8cbc09fac606" />
-
-**Before we dive into fancy processing, we need to know what our data actually looks like.**
-
-To get there, we’ll set up a baseline trace flow,  just the essentials.
-
-<img width="2554" height="1435" alt="image" src="https://github.com/user-attachments/assets/f6713274-9dab-423d-91d9-fd7462eb60d4" />
-
-**Next, we’ll keep the same setup and introduce processors to modify trace data, then verify the results in the Jaeger UI.**
-<img width="2558" height="1436" alt="image" src="https://github.com/user-attachments/assets/ec01118b-e02e-49ef-80bb-913b0f66811a" />
+> **On Linux without Docker Desktop?** Install [Docker Engine](https://docs.docker.com/engine/install/) and the [Docker Compose plugin](https://docs.docker.com/compose/install/linux/) instead.
 
 ## Resources
 - [OpenTelemetry documentation](https://opentelemetry.io/docs/)
   - Ask AI (⌘+K shortcut)
   - [Language APIs and SDKs](https://opentelemetry.io/docs/languages/)
   - [Instrumentation](https://opentelemetry.io/docs/concepts/instrumentation/)
+  - [Traces](https://opentelemetry.io/docs/concepts/signals/traces/)
   - [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
-    - [List of OpenTelemetry Collector processors](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor) 
+    - [List of OpenTelemetry Collector processors](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor)
+- [Jaeger documentation](https://www.jaegertracing.io/docs/)
 - [OpenTelemetry YouTube channel](https://www.youtube.com/@otel-official)
   - [OpenTelemetry for Beginners series - The JavaScript Journey](https://youtu.be/iEEIabOha8U?feature=shared)
 - [OpenTelemetry Slack channel](https://opentelemetry.io/community/end-user/slack-channel/)
 
-Now that you’ve covered the pipeline architecture in Episode 2, let’s move on to Episode 3 to set up the learning environment.
+# Episode 1 - What is OpenTelemetry?
 
-#  Episode 3 - Set Up Your Learning Environment: Ready, Steady, Trace!
+🎬 Watch this video to learn what OpenTelemetry is and why it matters.
 
-## Run the learning environment locally
-**Before getting started, make sure you have installed:**
-- [Node.js](https://nodejs.org/en/download/) 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-  
-**Clone the project**
+[![Watch the video](https://img.youtube.com/vi/iEEIabOha8U/0.jpg)](https://youtu.be/iEEIabOha8U)
+
+Now that we've covered the basics, let's get a sneak peek at what we'll be building throughout the series.
+
+# Episode 2 - Overview: Kickstart Your Telemetry Pipelines with OpenTelemetry
+
+In this episode, we'll walk through the telemetry pipelines we're going to build and see how our learning environment is set up.
+
+We'll also check out the series repo and everything you'll need to follow along with the hands-on exercises.
+
+## What we're building
+
+<img width="2049" height="1150" alt="What we are building: the Roll the Dice app with instrumentation, the OTel Collector (receive, process, and export), an observability backend for storage, and an observability frontend for visualization" src="images/what-we-are-building.jpg" />
+
+Our setup has four main parts:
+- **Roll the Dice**, a simple Node.js app. We'll use OpenTelemetry **instrumentation** to generate traces, metrics, and logs from it.
+- The **OpenTelemetry Collector**, which receives, processes, and exports the telemetry from our app.
+- An **observability backend**, where our telemetry is stored.
+- An **observability frontend**, where we visualize and explore our telemetry.
+
+Together, these four pieces make up a telemetry pipeline. We'll build one for each signal.
+
+**Traces pipeline**
+
+<img width="1280" height="714" alt="Traces pipeline: traces flow from the Roll the Dice app to the OTel Collector, then to Jaeger for storage and visualization" src="images/traces-pipeline.gif" />
+
+We'll start with traces. We'll use OpenTelemetry's automatic instrumentation to generate traces from our app. 
+
+Then we'll configure the Collector to receive, process, and export them to **Jaeger**, where we'll store and explore them.
+
+**Metrics pipeline**
+
+<img width="1280" height="714" alt="Metrics pipeline: metrics flow from the Roll the Dice app to the OTel Collector, then to Prometheus for storage and visualization" src="images/metrics-pipeline.gif" />
+
+Next, we'll build our metrics pipeline. We'll follow a similar process, but this time we'll use **Prometheus** to store and visualize our metrics.
+
+**Logs pipeline**
+
+<img width="1280" height="714" alt="Logs pipeline: logs flow from the Roll the Dice app to the OTel Collector, then to OpenSearch for storage and OpenSearch Dashboards for visualization" src="images/logs-pipeline.gif" />
+
+Finally, we'll build our logs pipeline. This time, we'll do something a little different and get our first taste of **manual instrumentation**, adding a few lines of code to our app instead of relying on automatic instrumentation.
+
+The rest will look familiar. Our logs travel through the Collector to **OpenSearch**, where we'll store and explore them.
+
+And that completes our three pipelines!
+
+<img width="1280" height="714" alt="Pipelines for all three signals: traces to Jaeger, metrics to Prometheus, and logs to OpenSearch, all through the OTel Collector" src="images/all-three-signals.gif" />
+
+## Our learning environment
+
+<img width="1280" height="714" alt="Learning environment: the Roll the Dice app runs locally, while Docker Compose runs the OTel Collector and the observability backends and frontends" src="images/learning-environment.gif" />
+
+We'll run our Roll the Dice app locally on our computer.
+
+We'll use Docker Compose to run the Collector, along with our observability backends and their visualization tools. This makes it easy to start and manage everything we need for the hands-on exercises.
+
+Here's where you'll find each backend once it's running:
+
+| Signal | Backend | URL |
+|---|---|---|
+| Traces | Jaeger | http://localhost:16686 |
+| Metrics | Prometheus | http://localhost:9090 |
+| Logs | OpenSearch Dashboards | http://localhost:5601 |
+
+You won't need all of these right away. Each part of the series only starts the backends it needs, so our environment grows as we add each signal.
+
+## Our two-step approach
+
+For each signal, we'll follow the same two steps. Let's use our traces pipeline as an example.
+
+**Step 1: The bare-bones setup**
+
+<img width="1280" height="714" alt="Bare-bones traces pipeline: the Collector receives traces from the Roll the Dice app and exports them to Jaeger" src="images/bare-bones-traces-pipeline.gif" />
+
+Before we dive into processing, we need to know what our data actually looks like.
+
+So first, we'll build a bare-bones setup with just the essentials to get our telemetry flowing. We'll instrument our app to generate traces, then configure the Collector to receive them and export them to Jaeger.
+
+From there, we'll explore our traces in Jaeger to see what they look like before any processing.
+
+**Step 2: Enter the processors**
+
+<img width="1280" height="714" alt="Traces pipeline with processors: the Collector receives, processes, and exports traces to Jaeger" src="images/traces-pipeline-with-processors.gif" />
+
+Once we've explored our traces, we'll build on that setup by adding **processors** to the Collector configuration. Processors let us modify, enrich, and filter our telemetry before it's exported.
+
+We'll apply different processors to make the changes we want, then head back to Jaeger to see the results.
+
+We'll follow this same approach for metrics and logs. That's why each signal's folder in the repo has two versions, `bare-bones-setup/` and `add-processors/`.
+
+## The series repo
+
+<!-- TODO screenshot: series repo on GitHub, showing the javascript/traces, metrics, and logs folders -->
+
+Everything we'll use in this series lives in this repo. Each signal has its own folder with a README like this one:
+
 ```
-# Choose a directory of your choice
+javascript/
+├── traces/
+│   ├── README.md
+│   ├── bare-bones-setup/
+│   └── add-processors/
+├── metrics/
+│   ├── README.md
+│   ├── bare-bones-setup/
+│   └── add-processors/
+└── logs/
+    ├── README.md
+    ├── bare-bones-setup/
+    └── add-processors/
+```
+
+Once you've installed the [prerequisites](#prerequisites), clone the repo so you're ready to follow along:
+
+```bash
+# choose a directory of your choice, then clone the repo
 git clone https://github.com/open-telemetry/opentelemetry-for-beginners.git
-cd opentelemetry-for-beginners/javascript/traces/bare-bones-setup
 ```
-**Start the server**
 
-Execute the following commands:
-```
+In the next episode, we'll start up our learning environment and build our first trace pipeline with a bare-bones setup.
+
+# Episode 3 - Trace Instrumentation & Bare-Bones Collector Configuration
+
+In this episode, we'll build our first pipeline, starting with traces!
+
+## What is a trace?
+
+<img width="1280" height="714" alt="A trace for one request: the GET /rolldice root span covers the whole request, with child spans for middleware and the request handler laid out over time" src="images/what-is-a-trace.gif" />
+
+A **trace** follows a single request as it moves through our app. Each step along the way is recorded as a **span**.
+
+Together, these spans show us how the request moved through our app and how much time it spent at each step.
+
+## The bare-bones setup
+
+<img width="1280" height="714" alt="Bare-bones traces pipeline: the Collector receives traces from the Roll the Dice app and exports them to Jaeger" src="images/bare-bones-traces-pipeline.gif" />
+
+As we'll do with each signal, we'll start simple. We'll instrument our app to generate traces, then configure a bare-bones OpenTelemetry Collector, or **the Collector** for short, to receive them and export them to Jaeger.
+
+This lets us explore our traces before we add any processing.
+
+## Run the learning environment
+
+We'll use two terminals: one for the Roll the Dice app and one for Docker.
+
+**Terminal 1: start the app**
+
+From the directory where you cloned the repo, run:
+
+```bash
+cd opentelemetry-for-beginners/javascript/traces/bare-bones-setup
 npm install
 npm start
 ```
-**Verify the app is running**
 
-In your browser, go to the following URL: http://localhost:8080/rolldice
+<img width="1423" height="690" alt="Terminal output of npm install and npm start, with OTEL_SERVICE_NAME=OTel4Beginners highlighted in the start command" src="images/run-app-terminal.png" />
 
-Refresh the page multiple times. This app will generate a random number from 1–6, just as if you were rolling a die.
+When the app starts, notice our service name, `OTel4Beginners`. We'll see where it comes from [later in this episode](#the-start-script).
 
-![Roll the dice mov](https://github.com/user-attachments/assets/32f80dc2-93b0-4578-91db-17b316a79760)
+**Roll the dice**
 
-**Using Docker, run the OpenTelemetry Collector and Jaeger**
+In your browser, go to http://localhost:8080/rolldice.
 
-In this series, we’ll refer to the OpenTelemetry Collector simply as the Collector.
-Before getting started, make sure Docker Desktop is open and running.
+Each time we refresh the page, the app generates a random number between 1 and 6, just like rolling a die. 
 
-<img width="2548" height="1440" alt="image" src="https://github.com/user-attachments/assets/34b5d38f-01b9-4294-a61e-33c6f40e3dda" />
+It's intentionally simple, so we can focus on our telemetry instead of how the app works.
 
+<img width="1540" height="568" alt="Refreshing the Roll the Dice app at localhost:8080/rolldice, which shows a new random number from 1 to 6 each time" src="images/roll-the-dice.gif" />
+
+**Terminal 2: start the Collector and Jaeger**
+
+Make sure Docker Desktop is running. Then open a second terminal and run these commands from the directory where you cloned the repo:
+
+```bash
+cd opentelemetry-for-beginners/javascript/traces/bare-bones-setup
+docker compose up
 ```
-# In a different terminal, within the project directory
-docker compose up --build 
-```
-**Refresh the Roll the Dice app page multiple times to send traces to the Collector**
 
-Take a look at the terminal that is running Docker.
+<img width="1976" height="718" alt="Docker Desktop with the engine running, next to a terminal running docker compose up in the bare-bones-setup folder" src="images/docker-compose-up.png" />
 
-You will be able to see the logs of traces that are flowing through the Collector.
+**Generate some traces**
 
-<img width="997" height="990" alt="image" src="https://github.com/user-attachments/assets/183a32a9-2752-4f56-a770-b76292019859" />
+Once the Collector and Jaeger are running, head back to the Roll the Dice app and refresh the page a few more times. Each refresh sends a request to our app and generates a trace.
 
-**Verify that the Collector is sending traces to the Jaeger backend**
-1. Go to the following URL (http://localhost:16686/) to access the Jaeger UI. 
+<img width="1540" height="568" alt="Refreshing the Roll the Dice app at localhost:8080/rolldice, which shows a new random number from 1 to 6 each time" src="images/roll-the-dice.gif" />
 
-2. Click on the "Service" section (orange box) to view all the services that are sending traces to Jaeger.
+As you refresh, watch the terminal running Docker. You'll see trace data appear as the Collector receives it.
 
-<img width="2560" height="1296" alt="image" src="https://github.com/user-attachments/assets/2fb3c82f-d65b-4400-a8a9-2a71a51658b0" />
+<img width="740" height="836" alt="Collector debug output in the Docker terminal, showing request handler spans with their trace IDs, timestamps, and attributes" src="images/collector-debug-output.png" />
 
-In our setup, the service name was set to "OTel4Beginners". 
+So our app is generating traces, and the Collector is receiving them. But how does our app actually generate these traces?
 
-Select the service "OTel4Beginners" then click on the "Find Traces" button (blue arrow).
+## What is instrumentation?
 
-If you don't see the service name "OTel4Beginners", refresh the Roll the Dice app page a few times. Verify that the Collector is receiving telemetry by checking its logs (terminal running Docker), then refresh the Jaeger UI page again.
+The answer is **instrumentation**. Instrumentation enables our app to generate telemetry, like traces, metrics, and logs.
 
-You’ll now see traces generated by the application flowing through the Collector and into Jaeger.
-<img width="2544" height="1291" alt="image" src="https://github.com/user-attachments/assets/eeb78946-8d58-4b4f-a6b3-1061bd06b4a8" />
+OpenTelemetry gives us different ways to instrument an application.
 
-With your environment set up and a chance to visualize traces generated by your app in Jaeger, you might be wondering: how does your application actually create these traces? That’s where `instrumentation` comes in.
+Here are the ones we'll use in this series:
 
-# Episode 4 - Back to Basics: Trace Instrumentation and Bare-Bones OTel Collector Configuration
+| | Automatic instrumentation | Manual instrumentation |
+|---|---|---|
+| Also known as | Zero-code solutions | Code-based solutions |
+| Code changes | None | Add code |
+| Captures | Libraries and runtime | Our app's custom logic |
 
-To observe your application or infrastructure, we first need to instrument it. In other words, we’re enabling it to generate traces, metrics, and logs.
+**Automatic instrumentation**, or auto-instrumentation for short, is ideal when you're getting started or when changing the app isn't an option. 
 
-Using OpenTelemetry, we can instrument your code in two primary ways:
-- Automatic instrumentation (AKA zero-code solutions)
-- Manual instrumentation (AKA code-based solutions)
+It captures telemetry from our app's libraries and runtime environment, giving us useful visibility with very little setup.
 
-`Automatic instrumentation` is ideal for getting started or when we can’t modify the app itself. It automatically captures telemetry from the libraries your app uses and the environment it runs in…
+**Manual instrumentation** gives us deeper insight. It lets us generate custom telemetry directly from our app logic, alongside the data collected by auto-instrumentation.
 
-`Manual instrumentation` gives you deeper insight by generating telemetry directly from your app. Using the OpenTelemetry API, you can create custom traces, metrics, and logs that build on the data collected automatically.
+For traces, we'll use auto-instrumentation. Let's take a look at the setup that makes it possible.
 
-In this episode, we will focus on `automatic instrumentation` so we can generate traces and visualize them in Jaeger. 
+## The OTel packages
 
-In our setup, the following OTel packages have been installed:  
-<img width="2087" height="1145" alt="image" src="https://github.com/user-attachments/assets/b3848c07-d99d-4f92-9817-551fc66bf1ef" />
+Open the `javascript/traces/bare-bones-setup` folder in your code editor, then open `package.json`.
 
-`@opentelemetry/sdk-node` is the core OpenTelemetry SDK for Node.js. It gives our app the tools it needs to generate, manage, and collect telemetry such as traces and metrics.
+<img width="1471" height="793" alt="package.json with the three OpenTelemetry dependencies highlighted" src="images/package-json-packages.png" />
 
-With `@opentelemetry/auto-instrumentations-node`, popular Node.js libraries and frameworks are instrumented automatically, allowing our app to generate telemetry with zero code changes.
+We've installed three OTel packages for this setup:
 
-`@opentelemetry/exporter-trace-otlp-grpc` sends the telemetry our app generates to any OTLP-compatible collector or backend over gRPC, moving trace data out of our app so it can be processed, stored, and visualized.
+- **`@opentelemetry/sdk-node`** is the OTel SDK for Node.js. It brings together the components we need to collect and export telemetry.
+- **`@opentelemetry/auto-instrumentations-node`** adds instrumentation for popular libraries and frameworks, so we can generate telemetry without changing our app code.
+- **`@opentelemetry/exporter-trace-otlp-grpc`** is the OTLP trace exporter. It sends traces over gRPC to the Collector or an OTLP-compatible backend.
 
-**instrumentation.js**
+Together, these packages let our app generate traces automatically and send them to the Collector.
 
-This file prepares your app to generate traces through auto-instrumentation and send this trace data to a collector or backend.
+## instrumentation.js
 
-```
+This file sets up our app to generate traces and send them to the Collector.
+
+```js
 const opentelemetry = require('@opentelemetry/sdk-node');
 
 const {
@@ -155,58 +276,51 @@ const sdk = new opentelemetry.NodeSDK({
   traceExporter: new OTLPTraceExporter({
      url: 'http://localhost:4317', 
   }),
-  instrumentations: [getNodeAutoInstrumentations()],
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      '@opentelemetry/instrumentation-router': { enabled: false },
+    }),
+  ],
 });
 
 sdk.start();
 ```
 
-`instrumentation.js` performs four main tasks:
+It does four main things:
 
-1. Import the OpenTelmetry packages required for tracing.
-```
-const opentelemetry = require('@opentelemetry/sdk-node');
-const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
-const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-grpc');
+1. **Imports the three OTel packages** we just saw in `package.json`.
+   - The OTel SDK, the auto-instrumentation package, and the OTLP trace exporter.
+2. **Creates a Node SDK instance** and configures the exporter to send traces to the Collector.
+   - We use port `4317`, the default port for OTLP over gRPC.
+3. **Enables auto-instrumentation** for common Node.js libraries.
+   - We've turned off router instrumentation because Express instrumentation already covers those steps. Keeping both enabled would create duplicate spans.
+4. **Starts the SDK** so our app can generate and send traces.
+
+## The start script
+
+Back in `package.json`, we've added a custom `start` script:
+
+```json
+"start": "OTEL_SERVICE_NAME=OTel4Beginners node --require ./instrumentation.js app.js"
 ```
 
-2. Initialize the tracing system by creating a new `NodeSDK` instance.
+<img width="1928" height="848" alt="package.json start script with the OTEL_SERVICE_NAME environment variable and the --require flag highlighted, next to the terminal where the app was started" src="images/package-json-start-script.png" />
 
-```
-const sdk = new opentelemetry.NodeSDK({
-  // configuration goes here
-});
-```
+It does two things:
 
-3. Configure automatic instrumentation and export traces to the local OpenTelemetry Collector.
+1. **`OTEL_SERVICE_NAME=OTel4Beginners`** gives our service its name (red).
+   - This tells the backend which service produced the telemetry.
+   - We set the name through an environment variable so we can configure it without changing our app code.
+   - That's the name we saw when we started the app, and we'll use it to find our traces in Jaeger.
+2. **`--require ./instrumentation.js`** loads `instrumentation.js` before our app code runs (blue).
+   - This order matters because the instrumentation needs to be ready when the app starts.
 
-```
-const sdk = new opentelemetry.NodeSDK({
-  traceExporter: new OTLPTraceExporter({
-    url: 'http://localhost:4317',
-  }),
-  instrumentations: [getNodeAutoInstrumentations()],
-});
+## Collector configuration
 
-```
-4. Start the SDK to begin recording and sending traces to the Collector.
-```
-sdk.start();
-```
-**IMPORTANT**
+Now that our app is set up to generate traces, let's see how the Collector receives and exports them.
 
-- The instrumentation setup and configuration must run **before** your application code.
-  - A common way to ensure this is by using the `--require` flag.
-- In a properly instrumented application, the service name is set using an environment variable, for example `OTEL_SERVICE_NAME=OTel4Beginners`.
-- To ensure this, we added the following `start` script to `package.json` (see below).
-  
-<img width="2552" height="1369" alt="image" src="https://github.com/user-attachments/assets/c2d377c1-6b03-4b6c-9dc1-f9f419d77f95" />
-
-## OpenTelemetry Collector Configuration
-
-In this series, we’ll refer to the OpenTelemetry Collector simply as the **Collector**.
-**otel/otel-collector-config.yaml**
-```
+```yaml
+# otel/otel-collector-config.yaml
 receivers:
   otlp:
     protocols:
@@ -219,7 +333,7 @@ exporters:
   debug:
     verbosity: detailed
 
-  otlp/jaeger:
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
@@ -228,15 +342,15 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [debug, otlp/jaeger]
+      exporters: [debug, otlp_grpc/jaeger]
 ```
-**Our Collector configuration is made up of three components:**
-1. Receivers
-2. Exporters
-3. Service 
 
-**Receivers tell the Collector how to accept incoming telemetry data**
-```
+We're keeping this configuration bare-bones, so it only has receivers, exporters, and service pipelines.
+
+### Receivers
+
+```yaml
+# otel/otel-collector-config.yaml
 receivers:
   otlp:
     protocols:
@@ -244,153 +358,219 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
+```
 
-```
-- The OTLP receiver is configured to accept telemetry over both gRPC (4317) and HTTP (4318).
-- This allows our app to send trace data to the Collector using standard OTLP endpoints.
-  
-**Exporters send data from the Collector to the OTLP-compliant backend(s) of your choice.**
-```
+Receivers tell the Collector how to accept incoming telemetry.
+
+- We're using the OTLP receiver with gRPC on port `4317` and HTTP on port `4318`. These are the default ports for OTLP.
+- Our app sends traces over gRPC, so it uses port `4317`, matching the exporter setup in `instrumentation.js`.
+
+### Exporters
+
+```yaml
+# otel/otel-collector-config.yaml
 exporters:
   debug:
     verbosity: detailed
 
-  otlp/jaeger:
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
 ```
-- The `debug` exporter prints the telemetry data to the Collector’s logs in a detailed way.
-  - It displays what data is flowing through the Collector and is useful for debugging or development. 
-  
-<img width="997" height="990" alt="image" src="https://github.com/user-attachments/assets/183a32a9-2752-4f56-a770-b76292019859" />
- 
-- The **`otlp/jaeger` exporter** forwards telemetry to a Jaeger backend running at port **4317**.
 
-**The `service` component defines how data moves through the Collector.**
-```
+Exporters define where the Collector sends telemetry data. In this setup, we're using two exporters.
+
+- The **`debug`** exporter prints our trace data to the Collector's output.
+  - With `verbosity` set to `detailed`, we can inspect individual spans and their details.
+  - That's what we saw in the terminal running Docker when we refreshed the app.
+  - It helps us check what's flowing through the Collector during development and debugging.
+- The **`otlp_grpc/jaeger`** exporter sends our traces to Jaeger, where we can store and visualize them.
+  - The `otlp_grpc` part identifies the exporter type, an OTLP exporter that sends data over gRPC. The name after the slash helps us tell exporters of the same type apart.
+  - The endpoint `jaeger:4317` points to our Jaeger service inside Docker, using the default port for OTLP over gRPC.
+  - We've set `insecure` to `true` to turn off TLS for our local demo. In production, we'd use TLS to secure the connection.
+
+### Service
+
+```yaml
+# otel/otel-collector-config.yaml
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [debug, otlp/jaeger]
+      exporters: [debug, otlp_grpc/jaeger]
 ```
-- Our configuration defines a pipeline for traces.
-- The traces sent from the app is received by the **`otlp` receiver**.
-- The **`debug` exporter** logs traces to the terminal where the Collector is running.
-- The **`otlp/jaeger` exporter** forwards traces to Jaeger. 
 
-**With the exporters in place, let’s switch to the Jaeger UI to see those traces in action.** 
-<img width="2547" height="1259" alt="image" src="https://github.com/user-attachments/assets/15e023bd-234c-455d-8606-a667ef7de5de" />
+Defining receivers and exporters alone doesn't enable them. We need to include them in a pipeline, and that's where the `service` section comes in. It ties everything together by defining how data moves through the Collector.
 
-**Click on one of the traces (orange box)**
-<img width="2541" height="1266" alt="image" src="https://github.com/user-attachments/assets/ea763fb5-9e58-4e09-b39b-118e94929684" />
+In our traces pipeline:
+- The **`otlp`** receiver accepts traces from our app over gRPC and passes them to both exporters.
+- The **`debug`** exporter prints them to the terminal.
+- The **`otlp_grpc/jaeger`** exporter sends them to Jaeger, where we can store and visualize them.
 
-**Click on its root span (GET/rolldice span)**
-<img width="2560" height="492" alt="image" src="https://github.com/user-attachments/assets/7e64318e-b710-43a7-8aa9-27679fbb4a6f" />
+<img width="1280" height="714" alt="Traces pipeline: the Roll the Dice app sends traces to the Collector's otlp receiver over gRPC. Inside the traces pipeline, the receiver passes them to both the debug exporter, which prints them to the terminal, and the otlp_grpc/jaeger exporter, which sends them to Jaeger to store and visualize" src="images/collector-configuration.gif" />
 
-**Expand the `Tags` and `Process` sections to view the metadata about traces collected from the app**
-<img width="2560" height="652" alt="image" src="https://github.com/user-attachments/assets/787ec066-a512-4a71-8145-c626fcdf3e0c" />
+## Explore our traces in Jaeger
 
-**The `Tags` section shows details about what happened during a request.** 
+Now let's check that our traces are reaching Jaeger.
 
-<img width="2545" height="1322" alt="image" src="https://github.com/user-attachments/assets/6ce09abd-55bd-46a0-94a6-e3e33e9dc91d" />
+**1. Find our traces**
 
-It includes span attributes(e.g., routes, methods, errors) to help you understand app behavior.
+Go to http://localhost:16686 to access the Jaeger UI. In the **Service** dropdown (orange box), select `OTel4Beginners`, the service name we set in our start script. Then click **Find Traces** (blue arrow).
 
-This trace includes some sensitive or unnecessary network details, such as `http.user_agent`, IP addresses, and other low-value information like ports.
-The actual values have been blurred in the screenshots, but the attribute types shown reflect what is included by default.
+<img width="1561" height="816" alt="Jaeger search page with OTel4Beginners selected in the Service dropdown and an arrow pointing to the Find Traces button" src="images/jaeger-search.png" />
 
-These attributes will be addressed and cleaned up in a later episode using OpenTelemetry Collector processors:
-- http.user_agent
-- net.host.ip
-- net.host.port
-- net.peer.ip
-- net.peer.port
+> **Don't see `OTel4Beginners`?** Refresh the Roll the Dice app a few more times. Check that trace data appears in the terminal running Docker, then refresh Jaeger and try again.
 
-**The `Process` section shows information about the app or service that created the trace.**
+**2. Look at the results**
 
-<img width="2557" height="1292" alt="image" src="https://github.com/user-attachments/assets/a8db5812-9c12-47e3-a87e-f41a8c722fc9" />
+Now we can see the traces generated by our app, flowing through the Collector and into Jaeger.
 
-This section contains some sensitive or low-value host and process details.
-While the values are blurred in the screenshots, the attribute types shown are included by default.
+<img width="1750" height="835" alt="Jaeger search results: a chart of traces plotted by time and duration, and a list of OTel4Beginners GET /rolldice traces with 2 spans each" src="images/jaeger-results.png" />
 
-These will be cleaned up in the next episode using processors:
+- The chart at the top shows our traces as dots, plotted by when each request happened and how long it took.
+- Each result in the list is a trace, representing one request to our app.
+- Each trace is made up of spans, the steps that make up that request.
 
-  - host.arch
-  - host.id
-  - host.name
-  - process.command
-  - process.command_args
-  - process.executable.path
-  - process.owner
-  - process.pid
+Click on one of the traces (orange box) to take a closer look.
 
-Now that traces are being generated and exported through the Collector, we can start processing that data before it is sent to the backend.
+**3. Read the trace timeline**
 
-# Episode 5 - Processing Traces: OpenTelemetry Collector in Action
+<img width="1842" height="409" alt="Jaeger trace timeline: the GET /rolldice root span highlighted in yellow, with the request handler child span highlighted in blue below it" src="images/jaeger-trace-timeline.png" />
 
-## Project folders 
+This is the trace timeline. It brings the [trace diagram](#what-is-a-trace) to life with real trace data.
 
-<img width="2550" height="1434" alt="image" src="https://github.com/user-attachments/assets/0de6e8b5-ed8a-4480-aaed-06fbddc99218" />
+- At the top is our **root span**, `GET /rolldice` (yellow box), which covers the whole request.
+- Below it is a **child span** (blue box) showing the work done by our request handler.
+- Each bar shows how long that span took.
 
-1. `bare-bones-setup/` (**Episode 4**)
-- Instruments the Roll the Dice app and sends traces to the OpenTelemetry Collector.
-- The Collector forwards traces to Jaeger for storage and visualization with no additional processing.
+Our diagram also showed a middleware step, but our app is simple, so there's only one step here. In a real app, you'd see many more spans, like database calls or requests to other services.
 
-<img width="2553" height="1435" alt="image" src="https://github.com/user-attachments/assets/6e65b7ef-3371-451d-bd88-37bd267cb142" />
+**4. Open the root span**
 
-2. `add-processors/` (**Current episode**)
-- Uses the same setup as `bare-bones-setup`, but applies processors to incoming traces.
-- These processors enrich resource metadata, remove low-value or sensitive attributes, and batch traces for more efficient exporting.
-  
-**In the terminal running the Roll the Dice app, stop the app and navigate to the `add-processors` folder:**
-```
-#stop the app
-CTRL + C
+Click on the root span, `GET /rolldice`. The span opens up to show its details, in two sections: **Tags** and **Process** (orange box). Expand both to take a closer look.
 
-# navigate to the add-processors folder
+<img width="1935" height="491" alt="The GET /rolldice span expanded in Jaeger, showing the collapsed Tags and Process sections" src="images/jaeger-span-details.png" />
+
+### Tags: span attributes
+
+<img width="1776" height="852" alt="The expanded Tags section of the GET /rolldice span, with client.address, network.peer.address, network.peer.port, server.port, and user_agent.original highlighted" src="images/jaeger-tags.png" />
+
+The **Tags** section gives us details about the request. These are **span attributes**, like the route, method, and status code. They help us understand how our app handled the request.
+
+We can also see details like the user agent, IP addresses, and ports that we may not need. Some could reveal information about users or their devices in production. We're running locally, but some values have been blurred in the screenshots to show what we'd want to handle carefully.
+
+In the next episode, we'll use processors to remove these attributes (orange boxes):
+- `client.address`
+- `network.peer.address`
+- `network.peer.port`
+- `server.port`
+- `user_agent.original`
+
+### Process: resource attributes
+
+<img width="1650" height="834" alt="The expanded Process section of the GET /rolldice span, with host and process attributes highlighted and their values blurred" src="images/jaeger-process.png" />
+
+The **Process** section shows details about the service that created this telemetry, like the host and the running process. These are called **resource attributes**. Instead of describing the request, they describe the source of our telemetry.
+
+Like the Tags section, this includes details we may not need, such as host identifiers and process details. Some could reveal information about our machines in production, so their values have been blurred in the screenshots.
+
+In the next episode, we'll use processors to remove these too (orange boxes):
+- `host.arch`
+- `host.id`
+- `host.name`
+- `process.command`
+- `process.command_args`
+- `process.executable.path`
+- `process.owner`
+- `process.pid`
+
+And that's our first pipeline up and running! In the next episode, we'll add processors to modify, enrich, and clean up our traces before they reach Jaeger.
+
+# Episode 4 - Processing Traces: OpenTelemetry Collector in Action
+
+In the last episode, we built our first pipeline and explored our traces in Jaeger. 
+
+Along the way, we spotted [span attributes](#tags-span-attributes) and [resource attributes](#process-resource-attributes) we don't need. We also noticed our traces were missing the environment they came from.
+
+In this episode, we'll fix that using **processors**.
+
+## Adding processors
+
+<img width="1280" height="714" alt="Adding processors: inside the Collector's traces pipeline, traces go from the otlp receiver through the resource processor, which adds the environment and drops host and process details, then the attributes/traces processor, which drops client and network details. The otlp_grpc/jaeger exporter groups traces with its sending queue, then sends them to Jaeger" src="images/adding-processors.gif" />
+
+Processors run inside the Collector, between the receiver and the exporter. They let us change our telemetry before it leaves the Collector.
+
+In this episode, we'll use them to:
+- Add the environment our traces came from and drop host and process details we don't need.
+- Drop client and network details that are sensitive or noisy.
+
+We'll also configure our Jaeger exporter to send traces in batches.
+
+All of this happens in the Collector, so we won't need to touch our app's code.
+
+## Project folders
+
+1. `javascript/traces/bare-bones-setup/` (**Episode 3**)
+   - Instruments the Roll the Dice app and sends traces to the Collector.
+   - The Collector exports traces to Jaeger with no additional processing.
+
+2. `javascript/traces/add-processors/` (**Current episode**)
+   - Uses the same app and instrumentation as `bare-bones-setup`.
+   - Adds processors to the Collector configuration and batches traces before exporting them to Jaeger.
+
+## Run the updated setup
+
+If you've been following along, you should still have two terminals open: one running the Roll the Dice app and one running Docker.
+
+**Terminal 1: restart the app**
+
+> First, press **Ctrl + C** to stop the running app.
+
+```bash
 cd ../add-processors
-
-#install dependencies and start the app
 npm install
 npm start
-``` 
-**In the terminal running Docker, stop and restart the OpenTelemetry Collector and Jaeger.**
 ```
-# stop the running containers
-CTRL + C
 
-# navigate to the add-processors folder
+The `add-processors` folder has its own dependencies, so we run `npm install` before starting the app.
+
+**Terminal 2: restart the Collector and Jaeger**
+
+```bash
+docker compose down
 cd ../add-processors
-
-# restart with the updated configuration
-docker compose up --build 
+docker compose up
 ```
-This reloads the Collector with the updated processor configuration. 
 
-**Refresh the Roll the Dice app page multiple times to send traces to the newly configured OpenTelemetry Collector.**
-![Roll the dice mov](https://github.com/user-attachments/assets/32f80dc2-93b0-4578-91db-17b316a79760)
+**Generate some traces**
 
-**Check the Collector logs to verify that traces are flowing through the Collector.**
-<img width="890" height="997" alt="image" src="https://github.com/user-attachments/assets/a8c0a4d1-9244-40da-8b8c-1f508547e9cb" />
+Once everything is running again, head back to the Roll the Dice app at http://localhost:8080/rolldice and refresh the page a few times.
 
-**Open the Jaeger UI and take a look at the new traces coming in.**
-<img width="2542" height="1267" alt="image" src="https://github.com/user-attachments/assets/7f4a5cb5-f59f-4d77-b640-7cf0a8e7eb1a" />
+<img width="1540" height="568" alt="Refreshing the Roll the Dice app at localhost:8080/rolldice, which shows a new random number from 1 to 6 each time" src="images/roll-the-dice.gif" />
 
-Now that we’ve confirmed the newly transformed traces are flowing through the Collector, let’s examine the updated configuration to understand how trace data is processed before export.
+In the terminal running Docker, we'll see our traces flowing through the Collector. Notice `deployment.environment.name` near the top (orange box). That's our first hint that something has changed.
 
-After that, we’ll look at the new traces in more detail to see how the processors have transformed them.
+<img width="1798" height="1796" alt="Collector debug output showing the resource attributes of a processed trace, with deployment.environment.name set to local highlighted, followed by GET /rolldice spans with fewer span attributes" src="images/collector-debug-output-processed.png" />
 
-## New OpenTelemetry Collector Configuration
+**Check Jaeger**
 
-### Three processors have been added to the existing Collector configuration to modify trace data before export:
-1. `resource` 
-2. `attributes` 
-3. `batch` 
+Go to http://localhost:16686, select `OTel4Beginners` in the **Service** dropdown (orange box), and click **Find Traces** (blue arrow).
 
-**otel/otel-collector-config.yaml**
-```
+<img width="2048" height="1065" alt="Jaeger search page with OTel4Beginners selected in the Service dropdown, an arrow pointing to the Find Traces button, and results showing 10 OTel4Beginners GET /rolldice traces with 2 spans each" src="images/jaeger-results-processed.png" />
+
+> **Don't see new traces right away?** Give it a few seconds, then refresh. We'll see why when we get to [batching](#batching-in-the-exporter).
+
+We can't tell from this overview alone, but these traces are no longer raw.
+
+The Collector processed them before sending them to Jaeger. As we walk through the Collector configuration, we'll compare what a trace looked like before with what it looks like now.
+
+## Collector configuration
+
+In your code editor, open the `javascript/traces/add-processors` folder. Then open `otel/otel-collector-config.yaml`.
+
+```yaml
+# otel/otel-collector-config.yaml
 receivers:
   otlp:
     protocols:
@@ -410,7 +590,7 @@ processors:
       - key: host.id
         action: delete
       - key: host.name
-        action: delete  
+        action: delete
       - key: process.command
         action: delete
       - key: process.command_args
@@ -422,55 +602,81 @@ processors:
       - key: process.pid
         action: delete
 
-  attributes:
+  attributes/traces:
     actions:
-      - key: http.user_agent
+      - key: user_agent.original
         action: delete
-      - key: net.host.ip
+      - key: client.address
         action: delete
-      - key: net.peer.ip
+      - key: network.peer.address
         action: delete
-      - key: net.host.port
+      - key: network.peer.port
         action: delete
-      - key: net.peer.port
+      - key: server.port
         action: delete
-
-  batch:
-    timeout: 5s
-    send_batch_size: 512
 
 exporters:
   debug:
     verbosity: detailed
 
-  otlp/jaeger:
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
+    sending_queue:
+      sizer: items
+      batch:
+        flush_timeout: 5s
+        min_size: 512
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [resource, attributes, batch]
-      exporters: [debug, otlp/jaeger]
+      processors: [resource, attributes/traces]
+      exporters: [debug, otlp_grpc/jaeger]
 ```
-### Processors modify, filter, or enrich telemetry data within the Collector before it is exported.
 
-**1. The `resource` processor modifies metadata about the service or host.**
-```
+Our bare-bones configuration had receivers, exporters, and a `service` section. Here, we've added a `processors` section with the `resource` and `attributes/traces` processors.
+
+### The resource processor
+
+The `resource` processor lets us change **resource attributes**, the attributes that describe where our telemetry came from. In Jaeger, these are the attributes we saw in the [Process](#process-resource-attributes) section.
+
+We're using it to add our environment and remove details we don't need.
+
+**Add the environment**
+
+```yaml
+# otel/otel-collector-config.yaml
 processors:
   resource:
     attributes:
       - key: deployment.environment.name
         value: local
         action: insert
+```
+
+Each entry follows the same pattern:
+- **`key`** is the attribute we want to change. Here, it's `deployment.environment.name`.
+- **`value`** is set to `local` because our app is running locally.
+- **`action`** tells the Collector what to do. The `insert` action adds the attribute if it's missing.
+
+That way, we can tell which environment our traces came from.
+
+**Remove host and process details**
+
+```yaml
+# otel/otel-collector-config.yaml
+processors:
+  resource:
+    attributes:
       - key: host.arch
         action: delete
       - key: host.id
         action: delete
       - key: host.name
-        action: delete  
+        action: delete
       - key: process.command
         action: delete
       - key: process.command_args
@@ -482,99 +688,108 @@ processors:
       - key: process.pid
         action: delete
 ```
-**In this configuration, the resource processor inserts a new resource attribute called `deployment.environment.name` and sets its value to `local`.**
 
-This makes it easier to identify where traces are coming from when working across multiple environments.
+These are the host and process details we highlighted in the last episode. Each entry uses the `delete` action, so the Collector removes that attribute before our traces reach Jaeger.
 
-**Newly processed trace**
-<img width="2560" height="994" alt="image" src="https://github.com/user-attachments/assets/a057f3c0-8af6-4eb6-a435-c6f2c30290ca" />
+We're keeping details we still find useful, like the Node.js runtime version.
 
-**In addition, the following resource attributes were deleted to remove low-value or sensitive host and process metadata.**  
+**Before and after**
 
-```
+<img width="2048" height="946" alt="The Process section of a raw trace next to a processed trace. The raw trace has host and process attributes highlighted. The processed trace has deployment.environment.name set to local, and the highlighted attributes are gone" src="images/jaeger-process-before-after.jpg" />
+
+The processed trace now includes `deployment.environment.name`, set to `local`. The host and process details we deleted are gone, and the useful runtime details are still there.
+
+### The attributes processor
+
+```yaml
+# otel/otel-collector-config.yaml
 processors:
-  resource:
-    attributes:
-      - key: deployment.environment.name
-        value: local
-        action: insert
-      - key: host.arch
-        action: delete
-      - key: host.id
-        action: delete
-      - key: host.name
-        action: delete  
-      - key: process.command
-        action: delete
-      - key: process.command_args
-        action: delete
-      - key: process.executable.path
-        action: delete
-      - key: process.owner
-        action: delete
-      - key: process.pid
-        action: delete
-```
-
-This helps reduce noise, improve privacy, and keep trace data focused.
-
-**Old traces from the original Collector configuration:**
-<img width="2558" height="1289" alt="image" src="https://github.com/user-attachments/assets/a177df0b-4183-4f02-8ffa-1aad6f8684b5" />
-
-**New traces from the new Collector configuration:**
-<img width="2560" height="984" alt="image" src="https://github.com/user-attachments/assets/1c710cf6-b81f-4aa7-849d-d721e8ce2f55" />
-
-**2. The `attributes` processor modifies, adds, or removes span attributes.**
-
-The following span attributes were deleted to keep span data focused on application behavior rather than client or network details.
-
-```
-attributes:
+  attributes/traces:
     actions:
-      - key: http.user_agent
+      - key: user_agent.original
         action: delete
-      - key: net.host.ip
+      - key: client.address
         action: delete
-      - key: net.host.port
+      - key: network.peer.address
         action: delete
-      - key: net.peer.ip
+      - key: network.peer.port
         action: delete
-      - key: net.peer.port
+      - key: server.port
         action: delete
 ```
 
-**Old traces from the original Collector configuration:**
-<img width="2549" height="1247" alt="image" src="https://github.com/user-attachments/assets/f0aee2dc-c218-4966-b867-eb4161523ad0" />
+The `attributes` processor lets us change **span attributes**, the details about the request itself. In Jaeger, these are the attributes we saw in the [Tags](#tags-span-attributes) section.
 
-**New traces from the new Collector configuration:**
-<img width="2560" height="1190" alt="image" src="https://github.com/user-attachments/assets/7980e73b-af1f-4336-aedb-49e1eb1257c9" />
+We don't need the user agent, IP addresses, or ports for this demo, and some of them could reveal information about our users. So we've listed them here with the `delete` action.
 
-**3. The `batch` processor groups telemetry data into batches before exporting.**
+The `/traces` part of the name works the same way as in `otlp_grpc/jaeger`. It's a name we chose to tell processors of the same type apart.
+
+**Before and after**
+
+<img width="2048" height="770" alt="The Tags section of a raw trace next to a processed trace. The raw trace has client.address, network.peer.address, network.peer.port, server.port, and user_agent.original highlighted. In the processed trace, those attributes are gone" src="images/jaeger-tags-before-after.jpg" />
+
+The client and peer addresses, the server port, and the user agent are gone. The details about the request itself are still there.
+
+### Batching in the exporter
+
+```yaml
+# otel/otel-collector-config.yaml
+exporters:
+  debug:
+    verbosity: detailed
+
+  otlp_grpc/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+    sending_queue:
+      sizer: items
+      batch:
+        flush_timeout: 5s
+        min_size: 512
 ```
-batch:
-    timeout: 5s
-    send_batch_size: 512
 
-```
-As a best practice, the `batch` processor should almost always be included in production-ready Collector configurations.
+We've made one more change in the exporters to batch our traces. **Batching** lets the Collector send telemetry in fewer, larger requests, which reduces network overhead as traffic grows.
 
-Adjust these parameters to fit your specific use case.
+We set up the `otlp_grpc/jaeger` exporter in the last episode. What's new is its `sending_queue`, which handles batching:
+- **`flush_timeout: 5s`** is how long the exporter can wait before sending a batch, even if it isn't full.
+- **`min_size: 512`** with **`sizer: items`** tells the exporter to send a batch once it reaches 512 items. For traces, those items are spans.
 
-**The service component was updated to tie the receivers, processors, and exporters together into a traces pipeline.**
+Whichever comes first, 512 spans or the 5-second timeout, triggers the export.
 
-```
+That explains the delay we saw in Jaeger earlier. A few dice rolls won't generate 512 spans, so our batch is sent when the timeout expires. The `debug` exporter doesn't batch, which is why our traces showed up in the terminal right away.
+
+These values are a starting point. We can adjust them to suit our needs.
+
+> **Seen a `batch` processor in other examples?** Batching used to be configured as a separate processor. The Collector is moving batching into the exporter's sending queue, which is what we're using here.
+
+### Service
+
+```yaml
+# otel/otel-collector-config.yaml
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [resource, attributes, batch]
-      exporters: [debug, otlp/jaeger]
+      processors: [resource, attributes/traces]
+      exporters: [debug, otlp_grpc/jaeger]
 ```
 
-**IMPORTANT**
+As we saw in the last episode, the `service` section is where everything comes together. In our traces pipeline:
+- The **`otlp`** receiver accepts traces from our app.
+- The **`resource`** processor adds our environment and removes the host and process details we don't need.
+- The **`attributes/traces`** processor removes client and network details from our spans.
+- The **`debug`** exporter prints the processed traces to the terminal.
+- The **`otlp_grpc/jaeger`** exporter groups them with its sending queue and sends them to Jaeger.
 
-In the `service` component, processors are applied in the order they are listed in the pipeline.
+The Collector runs processors in the order they're listed. 
 
-The `batch` processor should be listed **last** so it can batch the final version of the data before exporting.
+For these two, the order doesn't matter since they change different attributes. Later in the series, we'll see a pipeline where it does.
 
-In the next episode, we’ll shift focus from traces to metrics and walk through how to collect, process, and export application metrics using the OpenTelemetry Collector.
+<img width="1280" height="714" alt="Traces pipeline with processors: the Roll the Dice app sends traces to the Collector's otlp receiver. The resource processor adds the environment and drops host and process details, then the attributes/traces processor drops client and network details. The processed traces go to the debug exporter, which prints them to the terminal, and the otlp_grpc/jaeger exporter, which groups them with its sending queue and sends them to Jaeger" src="images/putting-it-all-together-processors.gif" />
+
+And that's how our raw traces become processed traces, all without changing a single line of our app's code!
+
+In the next episode, we'll move on to our second signal, metrics. We'll instrument our app for metrics and build a bare-bones pipeline for them.
+
+When you're ready, head over to the [Metrics walkthrough](../metrics/README.md).

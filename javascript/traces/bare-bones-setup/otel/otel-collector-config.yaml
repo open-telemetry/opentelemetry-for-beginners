@@ -10,7 +10,7 @@ exporters:
   debug:
     verbosity: detailed
 
-  otlp/jaeger:
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
@@ -19,4 +19,4 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [debug, otlp/jaeger]
+      exporters: [debug, otlp_grpc/jaeger]
