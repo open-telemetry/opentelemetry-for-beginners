@@ -1,0 +1,100 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Add/modify resource-level attributes (applies to both traces and metrics)
+  resource:
+    attributes:
+      - key: deployment.environment.name
+        value: local
+        action: insert
+      - key: host.arch
+        action: delete
+      - key: host.id
+        action: delete
+      - key: host.name
+        action: delete
+      - key: process.command
+        action: delete
+      - key: process.command_args
+        action: delete
+      - key: process.executable.path
+        action: delete
+      - key: process.owner
+        action: delete
+      - key: process.pid
+        action: delete
+
+  # Modify span attributes (for traces)
+  attributes/traces:
+    actions:
+      - key: http.user_agent
+        action: delete
+      - key: net.host.ip
+        action: delete
+      - key: net.peer.ip
+        action: delete
+      - key: net.host.port
+        action: delete
+      - key: net.peer.port
+        action: delete
+
+  # Modify metric datapoint attributes (for metrics)
+  attributes/metrics:
+    actions:
+      - key: net.host.port
+        action: delete
+
+  # Filter out unwanted metrics to reduce cardinality
+  filter/exclude_metrics:
+    error_mode: ignore
+    metrics:
+      metric:
+        # Drop a low-level V8 internal metric most apps don't need.
+        # The per-heap-space physical size is deep engine detail; the
+        # useful memory signals (v8js.memory.heap.used / heap.limit) stay.
+        - 'name == "v8js.memory.heap.space.physical_size"'
+
+  # Rename and transform metrics
+  metricstransform:
+    transforms:
+      # Rename the HTTP duration metric to match the current OTel
+      # semantic conventions (http.server.duration -> http.server.request.duration)
+      - include: http.server.duration
+        action: update
+        new_name: http.server.request.duration
+
+  # Batch for efficient export
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  debug:
+    verbosity: detailed
+
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+service:
+  pipelines:
+    # Traces come first in the series; the metrics episode builds on top of it.
+    traces:
+      receivers: [otlp]
+      processors: [resource, attributes/traces, batch]
+      exporters: [debug, otlp/jaeger]
+    metrics:
+      receivers: [otlp]
+      # order matters - filter early to drop unwanted metrics before further processing; batch runs last so it groups the final, processed data
+      processors: [resource, filter/exclude_metrics, attributes/metrics, metricstransform, batch]
+      exporters: [debug, prometheus]
