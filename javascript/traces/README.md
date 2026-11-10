@@ -495,9 +495,9 @@ Along the way, we spotted [span attributes](#tags-span-attributes) and [resource
 
 In this episode, we'll fix that using **processors**.
 
-## Adding processors
+## Processing traces with the Collector
 
-<img width="1280" height="714" alt="Adding processors: inside the Collector's traces pipeline, traces go from the otlp receiver through the resource processor, which adds the environment and drops host and process details, then the attributes/traces processor, which drops client and network details. The otlp_grpc/jaeger exporter groups traces with its sending queue, then sends them to Jaeger" src="images/adding-processors.gif" />
+<img width="1280" height="706" alt="Processing traces with the OpenTelemetry Collector: inside the Collector's traces pipeline, traces go from the otlp receiver through the resource processor, which adds the environment and drops host and process details, then the attributes/traces processor, which drops client and network details. The otlp_grpc/jaeger exporter groups traces with its sending queue, then sends them to Jaeger" src="images/adding-processors.gif" />
 
 Processors run inside the Collector, between the receiver and the exporter. They let us change our telemetry before it leaves the Collector.
 
