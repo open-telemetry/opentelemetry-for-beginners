@@ -20,13 +20,19 @@ const sdk = new opentelemetry.NodeSDK({
   traceExporter: new OTLPTraceExporter({
     url: 'http://localhost:4317',
   }),
-  metricReader: new PeriodicExportingMetricReader({
-    exporter: new OTLPMetricExporter({
-      url: 'http://localhost:4317',
+  metricReaders: [
+    new PeriodicExportingMetricReader({
+      exporter: new OTLPMetricExporter({
+        url: 'http://localhost:4317',
+      }),
+      exportIntervalMillis: 10000,
     }),
-    exportIntervalMillis: 10000,
-  }),
-  instrumentations: [getNodeAutoInstrumentations()],
+  ],
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      '@opentelemetry/instrumentation-router': { enabled: false },
+    }),
+  ],
 });
 
 sdk.start();

@@ -33,68 +33,55 @@ processors:
   # Modify span attributes (for traces)
   attributes/traces:
     actions:
-      - key: http.user_agent
+      - key: user_agent.original
         action: delete
-      - key: net.host.ip
+      - key: client.address
         action: delete
-      - key: net.peer.ip
+      - key: network.peer.address
         action: delete
-      - key: net.host.port
+      - key: server.port
         action: delete
-      - key: net.peer.port
-        action: delete
-
-  # Modify metric datapoint attributes (for metrics)
-  attributes/metrics:
-    actions:
-      - key: net.host.port
+      - key: network.peer.port
         action: delete
 
-  # Filter out unwanted metrics to reduce cardinality
+  # Drop metrics we don't need to reduce telemetry volume
   filter/exclude_metrics:
     error_mode: ignore
     metrics:
       metric:
         # Drop a low-level V8 internal metric most apps don't need.
-        # The per-heap-space physical size is deep engine detail; the
-        # useful memory signals (v8js.memory.heap.used / heap.limit) stay.
+        # The per-heap-space physical size is deep engine detail. The
+        # useful memory signal (v8js.memory.heap.used) stays.
         - 'name == "v8js.memory.heap.space.physical_size"'
-
-  # Rename and transform metrics
-  metricstransform:
-    transforms:
-      # Rename the HTTP duration metric to match the current OTel
-      # semantic conventions (http.server.duration -> http.server.request.duration)
-      - include: http.server.duration
-        action: update
-        new_name: http.server.request.duration
-
-  # Batch for efficient export
-  batch:
-    timeout: 5s
-    send_batch_size: 512
 
 exporters:
   debug:
     verbosity: detailed
 
-  otlp/jaeger:
+  # Jaeger receives our traces. Batching is handled here at the exporter
+  # level (sending_queue.batch) instead of a standalone batch processor.
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
+    sending_queue:
+      sizer: items
+      batch:
+        flush_timeout: 5s
+        min_size: 512
 
+  # Prometheus scrapes the Collector (pull-based), so there's nothing to batch
+  # on the way out. No batch processor and no sending_queue on this exporter.
   prometheus:
     endpoint: 0.0.0.0:8889
 
 service:
   pipelines:
-    # Traces come first in the series; the metrics episode builds on top of it.
     traces:
       receivers: [otlp]
-      processors: [resource, attributes/traces, batch]
-      exporters: [debug, otlp/jaeger]
+      processors: [resource, attributes/traces]
+      exporters: [debug, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp]
-      # order matters - filter early to drop unwanted metrics before further processing; batch runs last so it groups the final, processed data
-      processors: [resource, filter/exclude_metrics, attributes/metrics, metricstransform, batch]
+      processors: [resource, filter/exclude_metrics]
       exporters: [debug, prometheus]

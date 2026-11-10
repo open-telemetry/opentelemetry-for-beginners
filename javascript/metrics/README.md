@@ -1,14 +1,17 @@
 # OpenTelemetry for Beginners - The JavaScript Journey (Metrics)
 
-Getting started with OpenTelemetry can feel overwhelming, but this beginner series for JavaScript developers will guide you step by step. This guide covers the **metrics** signal and builds directly on the traces guide.
+Getting started with OpenTelemetry can feel overwhelming, but this beginner series for JavaScript developers will guide you step by step.
 
-> **New to the series?** Start with the [Traces walkthrough](../traces/README.md), which covers Episode 1 (_What is OpenTelemetry?_), the pipeline overview, and setting up your learning environment. This metrics guide picks up from there and assumes you've met the same prerequisites and are comfortable running the Roll the Dice app.
+This guide covers the **metrics** signal and builds on everything we set up in the [Traces walkthrough](../traces/README.md).
+
+> **New to the series?** Start with the [Traces walkthrough](../traces/README.md). It covers what OpenTelemetry is, the pipelines we'll build, the prerequisites, and how to clone the repo. This guide assumes you've completed those steps and can run the Roll the Dice app.
 
 ## Resources
 - [OpenTelemetry documentation](https://opentelemetry.io/docs/)
   - Ask AI (⌘+K shortcut)
   - [Language APIs and SDKs](https://opentelemetry.io/docs/languages/)
   - [Instrumentation](https://opentelemetry.io/docs/concepts/instrumentation/)
+  - [Metrics](https://opentelemetry.io/docs/concepts/signals/metrics/)
   - [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
     - [List of OpenTelemetry Collector processors](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor)
 - [Prometheus documentation](https://prometheus.io/docs/introduction/overview/)
@@ -16,119 +19,116 @@ Getting started with OpenTelemetry can feel overwhelming, but this beginner seri
   - [OpenTelemetry for Beginners series - The JavaScript Journey](https://youtu.be/iEEIabOha8U?feature=shared)
 - [OpenTelemetry Slack channel](https://opentelemetry.io/community/end-user/slack-channel/)
 
-# Episode 6 - Back to Basics: Metric Instrumentation and Bare-Bones OpenTelemetry Collector Configuration
+# Episode 5 - Metric Instrumentation & Bare-Bones Collector Configuration
 
-So far, everything we've done has centered on traces. 
+<img width="1280" height="714" alt="Traces pipeline with processors: traces flow from the instrumented Roll the Dice app to the OTel Collector, which receives, processes, and exports them to Jaeger for storage and visualization" src="images/traces-pipeline-with-processors.gif" />
 
-We instrumented the app, pushed those traces through the OpenTelemetry Collector, and visualized them in Jaeger. 
+In the previous episodes, we instrumented our app and configured the Collector to receive, process, and export our traces. From there, our traces were stored and visualized in Jaeger.
 
-<img width="2504" height="1406" alt="image" src="https://github.com/user-attachments/assets/4b95fe0d-10d0-4e13-adef-70a8f031fb7e" />
+Now that we've seen how OpenTelemetry works with traces, we'll follow a similar journey with metrics over the next few episodes.
 
-Traces are just one of the signals OpenTelemetry can collect. Over the next few episodes, we'll follow a similar journey with metrics.
+## What is a metric?
 
-So what are metrics? At their core, they're numeric measurements tracked over time, like the number of requests our app has served or how long each of those requests took.
+<img width="2049" height="1150" alt="What is a metric: two rows of data points over time, one counting requests handled (3, 5, 9, 12) and one tracking request duration (4 ms, 2 ms, 6 ms, 3 ms), with one data point highlighted" src="images/what-is-a-metric.jpg" />
 
-Just like with traces, we'll use auto-instrumentation to generate those metrics. No new tooling, no extra code.
+**Metrics** are numbers that tell us how our app behaves over time.
 
-<img width="2501" height="1404" alt="image" src="https://github.com/user-attachments/assets/bf423794-7d0e-4a77-bf3d-c63887a94764" />
+This example shows two metrics, one per row:
+- The top row is a running count of the requests our app has handled. It climbs as new requests arrive.
+- The bottom row records how long each of those requests took.
 
-For now, we'll keep things deliberately simple. Configure a bare-bones Collector that receives metrics and forwards them to Prometheus, where they'll be stored and visualized.
+Each box is a single value captured at a specific moment, called a **data point**.
 
-We'll also explore what those metrics look like before making any changes to them.
+Read a row from left to right, and you can watch the values change over time.
 
-In the following episode, we'll build on that foundation by introducing processors to transform our metrics before they're exported.
+This is the key difference between the two signals.
 
-Let's get everything set up.
+A **trace** shows us what happened during a single request. **Metrics** give us the bigger picture across all requests.
 
-## Run the learning environment locally
+## The bare-bones setup
 
-If you've been following along, you should already have two terminals open, one running the Roll the Dice app and another running Docker.
+<img width="1280" height="714" alt="Bare-bones metrics pipeline: metrics flow from the Roll the Dice app to the OTel Collector, then to Prometheus for storage and visualization" src="images/bare-bones-metrics-pipeline.gif" />
 
-We'll stop both and switch to the `metrics/bare-bones-setup` folder. Then we'll install the new dependencies for this example, and start everything again.
+As we did with traces, we'll start simple. 
 
-> **Just joining for metrics?** First, make sure you have installed:
-> - [Node.js](https://nodejs.org/en/download/)
-> - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-> - [Docker Compose](https://docs.docker.com/compose/install/)
->
-> Then head to the [Traces walkthrough](../traces/README.md) to clone the repo and set up the two terminals, and come back here.
+We'll generate metrics with auto-instrumentation, then configure a bare-bones Collector that receives them and passes them along to **Prometheus**, the backend we'll use to store and explore our metrics.
 
-**Terminal 1 - Roll the Dice app:**
+Before changing anything, we'll explore those metrics in Prometheus to get a feel for what our app collects out of the box.
+
+## Run the learning environment
+
+If you've been following along, you should still have two terminals open. One for the Roll the Dice app and one for Docker.
+
+In each one, we'll stop what's running and move to the `metrics/bare-bones-setup` folder. 
+
+It contains everything this episode needs, including the instrumentation, the Collector configuration, and a Docker setup that now includes Prometheus.
+
+**Terminal 1: restart the app**
+
+> First, press **Ctrl + C** to stop the running app.
+
 ```bash
-# stop the running app
-Ctrl + C
-
-# move to the metrics bare-bones folder
 cd ../../metrics/bare-bones-setup
-
-# install this folder's dependencies, then start
 npm install
 npm start
 ```
 
-**Terminal 2 - Docker (Collector + Jaeger + Prometheus):**
+**Terminal 2: restart the Collector and Jaeger, now with Prometheus**
+
 ```bash
-# stop and remove the traces stack
 docker compose down
-
-# move to the metrics bare-bones folder
 cd ../../metrics/bare-bones-setup
-
-# bring the stack up, bare-bones metrics setup (adds Prometheus)
 docker compose up
 ```
 
-Once everything is running, let's generate some metrics.
+> **Starting fresh?** From the directory where you cloned the repo, run `cd opentelemetry-for-beginners/javascript/metrics/bare-bones-setup` in each terminal instead. Then run `npm install` and `npm start` in one, and `docker compose up` in the other.
 
-**Generate some metric data**
+**Generate some metrics**
 
-Head back to the Roll the Dice app at http://localhost:8080/rolldice and give it a few refreshes. Every reload returns a random roll between 1 and 6, exactly like tossing a real die.
+Once everything is running, head back to the Roll the Dice app at http://localhost:8080/rolldice and refresh the page a few times.
 
-![Roll the dice mov](https://github.com/user-attachments/assets/32f80dc2-93b0-4578-91db-17b316a79760)
+<img width="1540" height="568" alt="Refreshing the Roll the Dice app at localhost:8080/rolldice, which shows a new random number from 1 to 6 each time" src="images/roll-the-dice.gif" />
 
-As those requests land, keep an eye on the Docker terminal. The Collector's logs start filling up with metric data. That's the confirmation we're after. The app is emitting telemetry, and the Collector is picking it up.
+While you refresh, keep an eye on the terminal running Docker. That's where the Collector prints the metrics it receives.
 
-<img width="1226" height="1125" alt="image" src="https://github.com/user-attachments/assets/155a4e4c-3de6-4a72-9984-714a900eab64" />
+<img width="2049" height="1025" alt="Collector debug output in the Docker terminal, with metrics on the left and spans on the right" src="images/collector-debug-metrics-traces.png" />
 
-With data flowing, let's dig into how the app is producing it in the first place.
+**Metrics**
+- Runtime metrics, like memory usage, appear on their own, even before any requests come in.
+- HTTP request metrics show up once we start rolling the dice.
 
-## Instrumentation recap
+**Traces**
+- Spans appear here too, because our traces pipeline is still running alongside the new one.
 
-To generate telemetry, we first need to instrument our app. Using OpenTelemetry, we can instrument our code in two primary ways:
-- **Automatic instrumentation** (AKA zero-code solutions)
-- **Manual instrumentation** (AKA code-based solutions)
+Our app is now sending both traces and metrics to the Collector. 
 
-We covered both in the trace episodes, so we won't rehash them here. What matters for us today is that the same auto-instrumentation that gave us traces also generates metrics, so in this episode we'll lean on auto-instrumentation again to generate metrics and visualize them in Prometheus.
+Next, let's look at the setup that makes the metrics possible.
 
-## The packages (package.json)
+> **Quick heads-up.** To keep things easy to follow, some of the code snippets below only show the metrics-related bits. Your actual files also include the traces setup from the earlier episodes, in `instrumentation.js` and the Collector config. We've just trimmed it out here so it's easier to focus on metrics.
 
-Switch back to the code editor. Make sure you have the metrics/bare-bones-setup folder open, then navigate to package.json.
+## The OTel packages
 
-Most of what's listed here should ring a bell from the trace episodes. Two entries are new, and both exist specifically to handle metrics. They're the Metrics SDK and the OTLP metric exporter.
+Open the `javascript/metrics/bare-bones-setup` folder in your code editor, then open `package.json`.
 
-<img width="1997" height="1067" alt="image" src="https://github.com/user-attachments/assets/cf171456-4863-4ff3-96ef-ccbdba8af2a9" />
+<img width="2049" height="1202" alt="package.json with the @opentelemetry/exporter-metrics-otlp-grpc and @opentelemetry/sdk-metrics dependencies highlighted" src="images/package-json-metrics-packages.png" />
 
-- `@opentelemetry/sdk-metrics` is the Metrics SDK. It periodically collects and exports the metrics our app generates.
-- `@opentelemetry/exporter-metrics-otlp-grpc` is the OTLP metric exporter. It sends those metrics to the OpenTelemetry Collector over gRPC.
+You'll recognize most of these packages from the traces setup. Two are new, and both are there for metrics:
 
-The Metrics SDK gathers and ships our measurements on a schedule, and the exporter hands them off to the Collector. Between them, metrics are produced automatically and delivered to the Collector without us having to write any of that code ourselves.
+- **`@opentelemetry/sdk-metrics`** is the Metrics SDK. It gathers the metrics our app records.
+- **`@opentelemetry/exporter-metrics-otlp-grpc`** is the OTLP metric exporter. It ships those metrics to the Collector over gRPC.
 
-Let's see how we use those packages to generate metrics. Switch to the instrumentation.js file. 
+To see how the two fit together, open `instrumentation.js`.
 
 ## instrumentation.js
 
-This file prepares our app to generate metrics and send them to the local Collector.
+This file should look familiar from the traces setup, with the metrics pieces added.
 
-```
+```js
 const opentelemetry = require('@opentelemetry/sdk-node');
 
 const {
   getNodeAutoInstrumentations,
 } = require('@opentelemetry/auto-instrumentations-node');
-
-const {
-  OTLPTraceExporter,
-} = require('@opentelemetry/exporter-trace-otlp-grpc');
 
 const {
   OTLPMetricExporter,
@@ -139,34 +139,50 @@ const {
 } = require('@opentelemetry/sdk-metrics');
 
 const sdk = new opentelemetry.NodeSDK({
-  traceExporter: new OTLPTraceExporter({
-    url: 'http://localhost:4317',
-  }),
-  metricReader: new PeriodicExportingMetricReader({
-    exporter: new OTLPMetricExporter({
-      url: 'http://localhost:4317',
+  // ...trace configuration from the earlier episodes...
+  metricReaders: [
+    new PeriodicExportingMetricReader({
+      exporter: new OTLPMetricExporter({
+        url: 'http://localhost:4317',
+      }),
+      exportIntervalMillis: 10000,
     }),
-    exportIntervalMillis: 10000,
-  }),
-  instrumentations: [getNodeAutoInstrumentations()],
+  ],
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      '@opentelemetry/instrumentation-router': { enabled: false },
+    }),
+  ],
 });
 
 sdk.start();
 ```
 
-Boiled down, this file walks through four steps:
+It does four main things:
 
-1. Import the OpenTelemetry SDK, the automatic instrumentation module, and the metric exporter, along with the periodic metric reader.
-2. Initialize the SDK by creating a new `NodeSDK` instance. This is where we configure how telemetry is created and where it's sent.
-3. Configure automatic instrumentation and export our metrics to the local Collector. We do this with a `PeriodicExportingMetricReader`, which gathers our metrics and sends them on a fixed interval (in our setup, every ten seconds) to the Collector listening on port `4317`, the standard OTLP endpoint.
-4. Start the SDK. From this point on, the app can generate and send metrics.
+1. **Imports the packages we need.**
+   - Along with the OTel SDK and auto-instrumentation, we bring in the OTLP metric exporter and a metric reader from the Metrics SDK.
+2. **Creates a Node SDK instance** and enables auto-instrumentation.
+   - No extra setup is needed here. The auto-instrumentation that gave us traces also records metrics, like request duration and memory usage.
+3. **Exports our metrics** to the Collector.
+   - This is what's new. The metric reader gathers the latest values every ten seconds (`exportIntervalMillis: 10000`) and hands them to the exporter.
+   - The exporter then sends them to the Collector on port `4317`, the same port our traces use.
+4. **Starts the SDK** so our app can generate and send metrics.
 
-Now that our app is set up to generate metrics, let's look at the Collector configuration that receives and exports them. You can find it by navigating to the otel directory and opening the otel-collector-config.yaml file.
+That covers the app side. We've seen how our app generates metrics and sends them to the Collector.
 
-## OpenTelemetry Collector Configuration
+<img width="2049" height="1150" alt="The bare-bones setup with the Roll the Dice app and the OTel Collector highlighted, showing the app side of the pipeline where metrics are generated and sent to the Collector" src="images/bare-bones-app-side.jpg" />
 
-**otel/otel-collector-config.yaml**
-```
+## Collector configuration
+
+Now let's look at the other half of the pipeline, where the Collector takes in those metrics and hands them off to our backend. 
+
+<img width="2049" height="1150" alt="The bare-bones setup with the OTel Collector and Prometheus backend highlighted, showing the Collector side of the pipeline where metrics are received and sent on to Prometheus" src="images/bare-bones-collector-side.jpg" />
+
+In your code editor, open `otel/otel-collector-config.yaml`.
+
+```yaml
+# otel/otel-collector-config.yaml
 receivers:
   otlp:
     protocols:
@@ -179,7 +195,7 @@ exporters:
   debug:
     verbosity: detailed
 
-  otlp/jaeger:
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
@@ -191,23 +207,20 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [debug, otlp/jaeger]
+      exporters: [debug, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp]
       exporters: [debug, prometheus]
 ```
 
-Our Collector configuration is intentionally minimal. It's made up of three main components:
-1. Receivers
-2. Exporters
-3. Service
+We're keeping this configuration bare-bones, so it only has receivers, exporters, and service pipelines.
 
-If you followed along with the trace episodes, this structure should look familiar. The receiver, in fact, hasn't changed at all. What's different this time lives in the exporter and the metrics pipeline, and those are exactly what we'll dig into next.
+The layout should look familiar from the trace episodes, and the receiver hasn't changed at all. What's new lives in the exporters and the metrics pipeline.
 
-**Exporters define where the Collector sends telemetry data.** 
+### Exporters
 
-In this setup, we use two exporters for our metrics.
-```
+```yaml
+# otel/otel-collector-config.yaml
 exporters:
   debug:
     verbosity: detailed
@@ -215,109 +228,184 @@ exporters:
   prometheus:
     endpoint: 0.0.0.0:8889
 ```
-- The **`debug` exporter** prints detailed telemetry data directly to the Collector's logs. For metrics, this shows us each metric name, its data points, and their attributes. It's very useful during development because it lets us see exactly what's flowing through the Collector.
 
-<img width="1150" height="1051" alt="image" src="https://github.com/user-attachments/assets/91210710-9e0e-43d0-a5a4-74f8c6673a37" />
+Exporters decide where the Collector sends our telemetry. For metrics, we're using two of them.
 
-- The **`prometheus` exporter** is where things diverge.
+- The **`debug`** exporter is the same one we used for traces. This time, it prints our metrics to the Collector's output.
+- The **`prometheus`** exporter is the new addition. It exposes our metrics on port `8889`.
+  - Instead of the Collector pushing metrics out, Prometheus visits that endpoint on a regular schedule and pulls them in. This is called **scraping**, and in our setup it happens every 15 seconds, as set in `otel/prometheus.yaml`.
+  - Once Prometheus has our metrics, we can query and graph them in its UI.
 
-```
-exporters:
-  debug:
-    verbosity: detailed
+### Service
 
-  otlp/jaeger:
-    endpoint: jaeger:4317
-    tls:
-      insecure: true
-
-  prometheus:
-    endpoint: 0.0.0.0:8889
-```
-
-Traces went to Jaeger. Metrics head to Prometheus, a backend built specifically for them. 
-
-The mechanism flips, too. Where the trace exporter _pushes_ data out to Jaeger, the Prometheus exporter simply _exposes_ an endpoint on port `8889` and lets Prometheus come scrape it. Once it's there, we can query and visualize metrics in the Prometheus UI.
-
-Let's tie everything together. 
-
-**The `service` component defines how data moves through the Collector.**
-```
+```yaml
+# otel/otel-collector-config.yaml
 service:
   pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp]
       exporters: [debug, prometheus]
 ```
-- In this metrics pipeline, the OTLP receiver accepts metric data from the app.
-- The `debug` exporter logs those metrics to the terminal.
-- The `prometheus` exporter exposes them to be scraped by Prometheus.
 
-Together, these components define the path our metrics take through the Collector.
+The `service` section now has two pipelines, one for traces and one for metrics. The traces pipeline sends traces to Jaeger, and the metrics pipeline sends metrics to Prometheus.
 
-## Explore your metrics in Prometheus
+In our metrics pipeline:
+- The **`otlp`** receiver accepts the metrics our app sends every ten seconds and passes them to both exporters.
+- The **`debug`** exporter prints them to the terminal.
+- The **`prometheus`** exporter exposes them on port `8889`, ready for Prometheus to scrape.
 
-With the configuration in place, it's time to watch it work. 
+<img width="1280" height="706" alt="Metrics pipeline: every 10 seconds, the Roll the Dice app sends metrics to the Collector's otlp receiver. Inside the metrics pipeline, the receiver passes them to the debug exporter, which prints them to the terminal, and the prometheus exporter on port 8889, which Prometheus scrapes to store and visualize them" src="images/metrics-collector-configuration.gif" />
 
-Open the Prometheus UI at http://localhost:9090. This is where we'll spend the rest of the section, visualizing the metrics our app produces as they travel through the Collector and land in Prometheus.
+That's the path our metrics take. But what can they actually tell us about our app?
 
-<img width="2430" height="768" alt="image" src="https://github.com/user-attachments/assets/ef8a19c9-48dc-4f14-a25b-870373f3744d" />
+## Metrics in a coffee shop
 
-Let's run a query for one of the metrics our app generates automatically:
+<img width="2049" height="1150" alt="A coffee shop that writes down every drink it makes: a latte in 3 minutes, a mocha in 4, and another latte in 2. These answer how long drinks take, how many drinks we've made, and how many of each drink we've made" src="images/coffee-shop.jpg" />
+
+Let's step away from the code for a moment and picture a coffee shop. Each time a drink is made, someone notes what it was and how long it took.
+
+So far, that's a latte in three minutes, a mocha in four, and another latte in two. 
+
+From those notes alone, we know how many drinks we've made and how fast we're serving them. Count lattes and mochas separately, and we also learn which drinks people order most.
+
+Those numbers are metrics, and they give us a quick read on how the shop is doing.
+
+## Metrics in our app
+
+<img width="2049" height="1150" alt="Our app as the coffee shop: every finished request to /rolldice is written down with its status code and duration. These answer how long requests take, how many requests our app has handled, and how many of each status code" src="images/app-is-the-coffee-shop.jpg" />
+
+Our app works the same way, except it serves requests instead of drinks. Whenever a request finishes, the app notes its route, its status code, and how long it took.
+
+- Counting requests tells us how busy our app is.
+- Timing them tells us how quickly it responds.
+- Grouping them by status code shows how many succeeded and how many failed.
+
+Put together, these metrics paint a picture of how our app is performing. 
+
+Let's find them in Prometheus.
+
+## Explore our metrics in Prometheus
+
+**1. Open the Prometheus UI**
+
+Go to http://localhost:9090. We'll spend the rest of this episode here, exploring our metrics.
+
+<img width="2049" height="836" alt="The Prometheus UI at localhost:9090, with an empty query bar and the Table view selected" src="images/prometheus-ui.png" />
+
+**2. Run a query**
+
+We'll begin with a simple question. How many requests has our app handled?
+
+Type this query into the query bar at the top of the page:
+
 ```
-http_server_duration_milliseconds_count
+http_server_request_duration_seconds_count
 ```
-This is a running count of the requests our app has handled. As we roll the dice, this HTTP server metric updates, and we didn't write any code to produce it. Auto-instrumentation generated it for us.
 
-Copy and paste the query above and run it in the Prometheus UI.
+This is a metric that auto-instrumentation created for us. Entering its name tells Prometheus which metric we want to see. It's a mouthful, so let's break this down. 
 
-Prometheus gives us two ways to read the result. 
+Think back to how we timed each drink in the coffee shop. Our app times its requests the same way, and that's what **`http_server_request_duration_seconds`** describes. The `_seconds` part tells us the unit of measurement.
 
-The **Table** view shows the metric's most recent value.
+<img width="2049" height="1150" alt="The http_server_request_duration_seconds part of the query labeled How long requests take, next to the coffee shop diagram where our app writes down the duration of every finished request" src="images/metric-name-duration.jpg" />
 
-<img width="2428" height="698" alt="image" src="https://github.com/user-attachments/assets/fc50617c-2fab-4af8-834c-4457671c7d1d" />
 
-The **Graph** view plots it over time so we can watch the count climb with each new roll. 
-<img width="1945" height="1133" alt="image" src="https://github.com/user-attachments/assets/d861c7ab-1d6f-44de-a37c-4b8caab62698" />
+Count up those durations, and we know how many requests our app has handled. In this example, that's three. That's the **`_count`** part of the name.
 
-This is one of the key strengths of metrics. They let us observe how our app behaves over time using numeric measurements.
+<img width="2049" height="1150" alt="The _count part of the query labeled Count of those requests, next to the coffee shop diagram where three request durations are highlighted to show a count of 3" src="images/metric-name-count.jpg" />
 
-But the metric value is only part of the story. Let's take a look at the labels that come with it.
+Read as a whole, the query asks, "How many requests has our app handled since it started?" Now click **Execute**.
 
-### Metric labels
+<img width="2049" height="1150" alt="The query http_server_request_duration_seconds_count broken down: http_server_request_duration_seconds means how long requests take, in seconds, and _count means the count of those requests. An arrow points to the Execute button" src="images/metric-name-breakdown.jpg" />
 
-In the same way trace spans came with attributes, each metric arrives with **labels** attached. 
+**3. Read the results in Table view**
 
-They add extra context onto every measurement, such as the HTTP route, the request method, the status code.  
+<img width="2049" height="1150" alt="Prometheus Table view for http_server_request_duration_seconds_count, showing three rows. Each row has the metric name, labels in curly braces, and a count on the right" src="images/prometheus-table.png" />
 
-They let us filter and break down our metrics to answer questions about how many requests hit the /rolldice route, or how many returned an error.
+The results open in **Table** view. 
 
-<img width="2427" height="737" alt="image" src="https://github.com/user-attachments/assets/e4dbec9f-249e-4ec3-baeb-0358d249bb90" />
+Rather than a single total, Prometheus returns three rows. Each one begins with the metric name, lists some details inside curly braces, and ends with a count on the right.
 
-That said, not every label pulls its weight. Some are added automatically, `net_host_name` and `net_host_port` among them. 
+Why split the requests into groups? Our coffee shop can help explain.
 
-They can be useful, but they also feed into cardinality, and cardinality has a cost. Every distinct combination of labels spins up its own time series, which quietly drives up storage and spend. 
+### Labels
 
-We'll tackle how to trim this back in the next episode.
+<img width="2049" height="1150" alt="Coffee shop orders grouped by drink, size, and milk: 9 large oat lattes and 5 small whole milk lattes, each with its own count" src="images/coffee-shop-labels.jpg" />
 
-### Resource attributes (where the metric came from)
+A single total doesn't tell a coffee shop much. So instead, we keep separate counts by drink, size, and milk. All the large oat lattes share one count, and small lattes with whole milk get another.
 
-Labels tell us _what_ got measured, but there's a second layer worth looking at. 
+Splitting things up like this lets us ask sharper questions. Here, large oat lattes are outselling small whole milk lattes, which tells us to stock up on oat milk.
 
-Alongside them, every batch of metrics carries a set of **resource attributes** that describe _where_ the data came from, the app or service behind it, along with details about its host, process, and environment.
+<img width="2049" height="1150" alt="The three Prometheus rows with the http_request_method and http_response_status_code labels highlighted inside the curly braces, like the label on a coffee cup" src="images/prometheus-labels.png" />
 
-To find them, jump back to the Docker terminal where the Collector is logging its debug output, and use your terminal's search function to find the `Resource attributes` section.
-(Our bare-bones Prometheus exporter doesn't publish a `target_info` metric, so this debug output is the clearest window into resource metadata. Think of it as the metrics equivalent of Jaeger's "Process" view.)
+Our app groups its requests in a similar way. Instead of drink, size, and milk, it uses details like the HTTP method and status code. Those are the details inside the curly braces.
 
-Since the logs scroll by fast, there's a screenshot below to make it easier to follow along.
+They work like the label on a coffee cup that describes the order, and in Prometheus, they're called **labels** too. Every unique combination of labels gets a row, and a count, of its own.
 
-<img width="2508" height="1409" alt="image" src="https://github.com/user-attachments/assets/1ecbac45-5bb5-4184-8da1-f18d5f911d4a" />
+<img width="2049" height="1150" alt="The three Prometheus rows with the http_response_status_code label highlighted on each: 404 with a count of 4, 200 with a count of 229, and 304 with a count of 11" src="images/prometheus-status-codes.png" />
 
-A handful of these are genuinely useful, while others are more than we really need. In our case that extra detail includes host identifiers, the process owner, and the entire command used to launch the app, all added automatically. 
+Take the status code label. Just as each drink size had its own count, each status code has its own row. In our example, we have:
+- **4** failed requests with a `404`
+- **229** successful requests with a `200`
+- **11** requests with a `304`
 
-Some of it is sensitive, some just noise. 
+> Your counts will be different. They depend on how many times you've refreshed the app.
 
-We'll clean these up in the next episode using processors:
+Thanks to this grouping, we can tell at a glance how many requests succeeded and how many failed.
+
+**4. Switch to Graph view**
+
+Table view gives us a snapshot of each group's count. Those counts keep changing as requests come in, so click **Graph** to watch them over time.
+
+<img width="2049" height="1150" alt="Prometheus Graph view with one line each for status codes 200, 304, and 404. The 200 line steps up over time as more requests come in" src="images/prometheus-graph.png" />
+
+Every line here matches one of the rows from Table view. Rather than just the latest count, it shows how that count has changed over time. A line of values like this is called a **time series**.
+
+Try it yourself. Roll the dice a few more times, give it about 30 seconds, then click **Execute** again. You'll see the line for successful requests step up.
+
+Three groups give us three time series. So what happens when we add more labels?
+
+### Cardinality
+
+Let's return to the coffee shop one last time. Our two groups of drinks each have a count that changes over time, which makes two time series.
+
+The number of time series we have is called **cardinality**, so the shop's cardinality is two.
+
+<img width="2049" height="1150" alt="Cardinality in the coffee shop: two groups of drinks make 2 time series, a cardinality of 2. Adding a customer name label creates a new time series for almost every customer" src="images/cardinality-coffee-shop.jpg" />
+
+Now say we add each customer's name as a label. 
+
+The single count for large oat lattes would break into a separate count for every customer who ordered one. Each new customer adds another time series, and that's how one label with lots of different values can drive cardinality up.
+
+Our app follows the same rule. 
+
+The query returned three time series, giving it a cardinality of three. Prometheus also shows this number next to **Result series**.
+
+<img width="2049" height="1150" alt="Prometheus Table view with each row labeled as a time series. Three time series make a cardinality of 3, shown next to Result series" src="images/prometheus-time-series.png" />
+
+Every new combination of label values adds a time series, and every time series is more data to store. 
+
+Over time, that can add up to higher costs. In the next episode, we'll see how the Collector can help us decide what data to keep.
+
+### Resource attributes
+
+Labels describe the requests themselves. **Resource attributes** describe something different, which is where our metrics came from.
+
+We first met them with [traces](../traces/README.md#process-resource-attributes). They tell us about the service, host, and process behind our telemetry.
+
+Most of them don't show up as labels on our metrics in Prometheus, so we'll find them in the Collector's debug output instead. In the terminal running Docker, search for `ResourceMetrics`. The resource attributes for our metrics are listed right below it.
+
+The output moves fast, so here's a screenshot to follow along with:
+
+<img width="1024" height="912" alt="Collector debug output in the Docker terminal, with the Resource attributes block for our metrics highlighted and host and process values blurred" src="images/collector-resource-attributes.png" />
+
+A few of these are genuinely useful. `service.name`, for example, tells us which service sent the data.
+
+Others are more than we need for this demo, like host identifiers, the process owner, and the full command used to start the app. Their values are blurred in the screenshot, but you can still see which attributes were added automatically.
+
+In the next episode, we'll use processors to remove these:
 - `host.arch`
 - `host.id`
 - `host.name`
@@ -327,84 +415,96 @@ We'll clean these up in the next episode using processors:
 - `process.owner`
 - `process.pid`
 
-> **Tip:** If the Resource block has scrolled off, refresh http://localhost:8080/rolldice a few times. The Collector exports metrics about every ten seconds, so the Resource block will appear again in the debug output.
+And that's our metrics pipeline up and running! 
 
-To recap, we used auto-instrumentation to produce metrics, then configured a bare-bones OpenTelemetry Collector to receive them and pass them along to Prometheus. 
+<img width="1280" height="714" alt="Bare-bones metrics pipeline: metrics flow from the Roll the Dice app to the OTel Collector, then to Prometheus for storage and visualization" src="images/bare-bones-metrics-pipeline.gif" />
 
-Along the way we got familiar with the labels and resource attributes attached to our telemetry. The pipeline is up and running, which means we're ready for the more interesting part, actually reshaping the data. 
+We generated metrics with auto-instrumentation, sent them through a bare-bones Collector, and explored them in Prometheus, along with the labels and resource attributes that come with them.
 
-In the next episode, processors take center stage, and we'll use them to tidy up, enrich, and transform our metrics before they leave the Collector.
+Next, we'll put that pipeline to work. 
 
-# Episode 7 - Processing Metrics: OpenTelemetry Collector in Action
+In the next episode, we'll add processors to clean up, enrich, and filter our metrics before they leave the Collector.
 
-In the last episode, we instrumented our app and set up a bare-bones OpenTelemetry Collector to receive and export metrics. Along the way, we noticed that our metrics carried extra labels and resource metadata we didn't really need, some of it sensitive, some of it just noise.
+# Episode 6 - Processing Metrics: OpenTelemetry Collector in Action
 
-<img width="2504" height="1405" alt="image" src="https://github.com/user-attachments/assets/bab79b62-026d-433f-ac62-79f58ccefb08" />
+In the last episode, we set up our app to generate metrics and a bare-bones OTel Collector to get them to Prometheus.
 
-In this episode, we'll fix that using **processors**, which run inside the Collector and let us modify, enrich, or filter telemetry before it's exported.
+We also spotted [resource attributes](#resource-attributes) we don't need, like host identifiers, the process owner, and the command used to start our app. Some could reveal sensitive information. Others just aren't useful for our demo.
 
-<img width="2505" height="1409" alt="image" src="https://github.com/user-attachments/assets/ce0dd8eb-1259-4d73-84cc-3be29412adc5" />
+And we saw how [more time series](#cardinality) means more data to store, which can increase costs.
+
+In this episode, we'll clean things up using **processors**.
+
+## Processing metrics with the OpenTelemetry collector
+
+<img width="1280" height="706" alt="Processing metrics with the OpenTelemetry Collector: metrics flow from the Roll the Dice app to the OTel Collector, where processors clean them up before they reach Prometheus for storage and visualization" src="images/processing-metrics-with-processors.gif" />
+
+Just like we did with traces, we'll make these changes inside the Collector, before our metrics reach Prometheus.
+
+We'll use two processors:
+- The **`resource`** processor removes resource attributes we don't need.
+- The **`filter`** processor drops a metric we don't want to keep.
+
+We'll also look at how Prometheus collects our metrics and how that differs from sending traces to Jaeger.
+
+All of this happens in the Collector, so we won't need to touch our app's code.
 
 ## Project folders
 
-1. `bare-bones-setup/` (**Episode 6**)
-- Instruments the Roll the Dice app and sends metrics to the OpenTelemetry Collector.
-- The Collector exports metrics to Prometheus with no additional processing.
+1. `javascript/metrics/bare-bones-setup/` (**Episode 5**)
+   - Instruments the Roll the Dice app and sends metrics to the Collector.
+   - The Collector exports metrics to Prometheus with no additional processing.
 
-2. `add-processors/` (**Current episode**)
-- Uses the same setup as `bare-bones-setup`, but applies processors to incoming metrics.
-- These processors enrich resource metadata, drop metrics we don't need, remove low-value or sensitive labels, rename a metric to match current conventions, and batch metrics for more efficient exporting.
+2. `javascript/metrics/add-processors/` (**Current episode**)
+   - Uses the same app and instrumentation as `bare-bones-setup`.
+   - Adds processors to the Collector configuration that clean up our resource attributes and drop a metric we don't need.
 
-**In the terminal running the Roll the Dice app, stop the app and navigate to the `add-processors` folder:**
-```
-# stop the app
-Ctrl + C
+## Run the updated setup
 
-# navigate to the add-processors folder
+You should still have two terminals open, one for the Roll the Dice app and one for Docker.
+
+In each one, we'll stop what's running and switch to the `metrics/add-processors` folder. Restarting the Collector loads our new configuration, including the processors we'll explore in this episode.
+
+**Terminal 1: restart the app**
+
+> First, press **Ctrl + C** to stop the running app.
+
+```bash
 cd ../add-processors
-
-# install dependencies and start the app
 npm install
 npm start
 ```
 
-**In the terminal running Docker, stop and restart the Collector, Jaeger, and Prometheus:**
-```
-# stop and remove the running containers
+The `add-processors` folder has its own dependencies, so we run `npm install` before starting the app.
+
+**Terminal 2: restart the Collector, Jaeger, and Prometheus**
+
+```bash
 docker compose down
-
-# navigate to the add-processors folder
 cd ../add-processors
-
-# restart with the updated configuration
 docker compose up
 ```
-The Collector restart is the important step here. It's what loads the new processors config.
 
-**Generate some metric data**
+**Generate some metrics**
 
-Head back to the Roll the Dice app in your browser and refresh it a few times to push fresh metrics into the newly configured Collector. 
+Once everything's running, head back to the Roll the Dice app at http://localhost:8080/rolldice and refresh the page a few times.
 
-![Roll the dice mov](https://github.com/user-attachments/assets/32f80dc2-93b0-4578-91db-17b316a79760)
+<img width="1540" height="568" alt="Refreshing the Roll the Dice app at localhost:8080/rolldice, which shows a new random number from 1 to 6 each time" src="images/roll-the-dice.gif" />
 
-Then switch over to the terminal running Docker, where you'll see those metrics moving through the OpenTelemetry Collector in the debug output.
+As you refresh, keep an eye on the terminal running Docker. You'll see metrics and spans coming through the Collector, just like last time.
 
-<img width="1224" height="1131" alt="image" src="https://github.com/user-attachments/assets/378f2f29-acfe-4d28-9069-1076e145336a" />
+<img width="2049" height="1025" alt="Collector debug output in the Docker terminal, with metrics on the left and spans on the right" src="images/collector-debug-metrics-traces-processed.png" />
 
-With data flowing again, let's open up the configuration that's now processing it.
+The difference from the last episode is that they now pass through our processors before they're exported.
 
-Switch back to the code editor. Make sure you have the metrics/add-processors folder open. Then navigate to the otel directory and open the otel-collector-config.yaml file.
+Let's look at the configuration to see what's changed.
 
-## New OpenTelemetry Collector Configuration
+## Collector configuration
 
-Back in the bare-bones setup, this file had just three top-level sections, the receivers, the exporters, and the service block that organizes our pipelines. Now a fourth one joins them, `processors`, which is where each processor gets defined.
+In your code editor, open the `javascript/metrics/add-processors` folder. Then open `otel/otel-collector-config.yaml`.
 
-Because we're building on top of the traces episodes, the file lays out both a traces pipeline and a metrics pipeline, and the two lean on a couple of shared processors. Our attention here is on the **metrics** pipeline, which puts five processors to work.
-
-Each one has a distinct job, so we'll walk through them one at a time, in the order `resource`, `attributes/metrics`, `filter/exclude_metrics`, `metricstransform`, and `batch`. The order they actually run in inside the pipeline is a little different, and we'll come back to that once we've seen what each one does.
-
-**otel/otel-collector-config.yaml**
-```
+```yaml
+# otel/otel-collector-config.yaml
 receivers:
   otlp:
     protocols:
@@ -414,7 +514,6 @@ receivers:
         endpoint: 0.0.0.0:4318
 
 processors:
-  # Add/modify resource-level attributes (applies to both traces and metrics)
   resource:
     attributes:
       - key: deployment.environment.name
@@ -437,53 +536,38 @@ processors:
       - key: process.pid
         action: delete
 
-  # Modify span attributes (for traces)
   attributes/traces:
     actions:
-      - key: http.user_agent
+      - key: user_agent.original
         action: delete
-      - key: net.host.ip
+      - key: client.address
         action: delete
-      - key: net.peer.ip
+      - key: network.peer.address
         action: delete
-      - key: net.host.port
+      - key: server.port
         action: delete
-      - key: net.peer.port
-        action: delete
-
-  # Modify metric datapoint attributes (for metrics)
-  attributes/metrics:
-    actions:
-      - key: net.host.port
+      - key: network.peer.port
         action: delete
 
-  # Filter out unwanted metrics to reduce cardinality
   filter/exclude_metrics:
     error_mode: ignore
     metrics:
       metric:
         - 'name == "v8js.memory.heap.space.physical_size"'
 
-  # Rename and transform metrics
-  metricstransform:
-    transforms:
-      - include: http.server.duration
-        action: update
-        new_name: http.server.request.duration
-
-  # Batch for efficient export
-  batch:
-    timeout: 5s
-    send_batch_size: 512
-
 exporters:
   debug:
     verbosity: detailed
 
-  otlp/jaeger:
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
+    sending_queue:
+      sizer: items
+      batch:
+        flush_timeout: 5s
+        min_size: 512
 
   prometheus:
     endpoint: 0.0.0.0:8889
@@ -492,28 +576,47 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [resource, attributes/traces, batch]
-      exporters: [debug, otlp/jaeger]
+      processors: [resource, attributes/traces]
+      exporters: [debug, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp]
-      processors: [resource, filter/exclude_metrics, attributes/metrics, metricstransform, batch]
+      processors: [resource, filter/exclude_metrics]
       exporters: [debug, prometheus]
 ```
 
-With the full config in view, here's the role each of the five processors plays for our metrics.
+Our bare-bones configuration had receivers, exporters, and a `service` section. Now we've added a fourth section, `processors`.
 
-**1. The `resource` processor modifies metadata about the service or host.**
+You'll see our traces processors here too, but we'll focus on the two used by our metrics pipeline. The `resource` processor will look familiar from traces. The `filter` processor is new.
 
-You already saw this one in the traces processing episode, and it's the very same processor here, shared by both the traces and metrics pipelines. 
+Let's start with the `resource` processor.
 
-```
+### The resource processor
+
+We've already used the `resource` processor for [traces](../traces/README.md#the-resource-processor). Here, both pipelines share the same `resource` processor, so it makes the same changes to our traces and metrics.
+
+**Add the environment**
+
+```yaml
+# otel/otel-collector-config.yaml
 processors:
-  # Add/modify resource-level attributes (applies to both traces and metrics)
   resource:
     attributes:
       - key: deployment.environment.name
         value: local
         action: insert
+```
+
+First, it uses the `insert` action to add `deployment.environment.name` with the value `local`.
+
+That tells us which environment our telemetry came from.
+
+**Remove host and process details**
+
+```yaml
+# otel/otel-collector-config.yaml
+processors:
+  resource:
+    attributes:
       - key: host.arch
         action: delete
       - key: host.id
@@ -532,119 +635,152 @@ processors:
         action: delete
 ```
 
-On the way in, it adds a `deployment.environment.name` attribute and sets it to `local`. That makes it obvious at a glance which environment our metrics came from. It also uses the `delete` action to remove the host and process attributes we saw in the bare-bones debug output. Those were the ones that were sensitive, redundant, or just noise.
+Then, it uses the `delete` action to remove the host and process attributes we spotted in the [last episode](#resource-attributes).
 
-To see the difference, we'll look at the Collector's debug output rather than the Prometheus UI. Resource attributes describe the app producing the telemetry. In this setup, they are not exposed as Prometheus labels, so the debug output is the clearest place to compare before and after. 
+**Before and after**
 
-In the screenshot, the raw telemetry sits on the left and the processed version on the right. The `deployment.environment.name` attribute has been added (green box). The unnecessary host and process attributes are gone (red boxes).
+Most resource attributes don't show up as labels on our metrics in Prometheus, so like last episode, we'll check them in the Collector's output.
 
-<img width="2458" height="760" alt="image" src="https://github.com/user-attachments/assets/5c707ece-3a70-4571-86bc-a7fd44df8540" />
+In the terminal running Docker, search for `ResourceMetrics`. The resource attributes for our metrics are listed right below it.
 
-**2. The `attributes/metrics` processor modifies the labels attached to each metric.**
-```
-attributes/metrics:
-    actions:
-      - key: net.host.port
-        action: delete
-```
-Where the resource processor works on the telemetry's source, this one works on the labels attached to each metric. We use it to delete `net.host.port`, a label that describes the network rather than anything the app itself is doing. Dropping it keeps our metrics centered on application behavior, and it lowers cardinality at the same time.
+If the output moves too quickly, you can follow along with the screenshot below.
 
-Because metric labels show up as Prometheus labels, this is easy to verify there. Looking back at the bare-bones query for `http_server_duration_milliseconds_count`, Prometheus returned three time series, and every one of them carried a `net_host_port` label. 
+<img width="2049" height="1150" alt="The resource attributes of our metrics in the Collector debug output, before and after processing. Before processing, the host and process attributes are highlighted with their values blurred. After processing, deployment.environment.name is set to local, and the host and process attributes are gone" src="images/resource-attributes-before-after.jpg" />
 
-<img width="2511" height="732" alt="image" src="https://github.com/user-attachments/assets/ee907835-df72-4879-b754-6f04c639ce76" />
+On the left is the raw output from our bare-bones setup, and on the right is the same block after processing.
 
-Now switch back to the live Prometheus UI and run the HTTP request duration query again:
-```
-http_server_request_duration_milliseconds_count
-```
-This time the metric comes back without the `net_host_port` label. That's the effect of the attributes processor.
+Two things changed:
+- `deployment.environment.name` now appears with the value `local`.
+- The host and process attributes we deleted are gone.
 
-<img width="2505" height="591" alt="image" src="https://github.com/user-attachments/assets/9794bd70-9a05-4107-b7b5-0aa52e14c5da" />
+Everything else, like `service.name` and the runtime information, stays the same because the `resource` processor only changes what we tell it to.
 
-**3. The `filter/exclude_metrics` processor drops entire metrics we don't need.**
-```
-filter/exclude_metrics:
+### The filter processor
+
+```yaml
+# otel/otel-collector-config.yaml
+processors:
+  filter/exclude_metrics:
     error_mode: ignore
     metrics:
       metric:
         - 'name == "v8js.memory.heap.space.physical_size"'
 ```
-So far we've trimmed a single label. This processor goes a step further and drops an entire metric. 
 
-Not every metric our app emits is useful, and every one we hold onto adds to storage, query cost, and overall telemetry volume. 
+Next, let's look at the `filter` processor. We haven't used this one before.
 
-In our config, we're removing a low-level V8 runtime metric, `v8js.memory.heap.space.physical_size`, which reports the physical size of individual heap spaces.
+The `resource` processor changes the details attached to our telemetry. The `filter` processor lets us drop telemetry we don't need.
 
-That's more detail than this app needs. The memory signals that actually matter, like heap used and heap limit, stay put. Inside the pipeline we run this filter **early**, ahead of the label cleanup and renaming, so we don't spend effort on metrics we're about to drop anyway.
+Here, we're dropping a whole metric called `v8js.memory.heap.space.physical_size`. It measures the size of memory areas in V8, the JavaScript engine that runs our app.
 
-To confirm it worked, we can query the metric in Prometheus before and after. Beforehand the query returns the metric as expected. 
+We don't need that much memory detail for this demo, so we'll leave it out. That gives us less data to store and query, which can help keep costs down.
 
-<img width="2502" height="1326" alt="image" src="https://github.com/user-attachments/assets/5684fa7d-b418-4271-83db-46b9c7f63cd6" />
+Here's how the configuration works:
+- Under **`metrics`**, each entry in the **`metric`** list is a condition. Any metric that matches a condition gets dropped. Ours matches the metric by its name.
+- **`error_mode: ignore`** tells the Collector to log any condition that fails and keep going, instead of stopping on the error.
+- The **`/exclude_metrics`** part of the name works the same way as `/traces` in `attributes/traces`. It's a name we chose to describe what this processor does.
 
-Once the processor is in place the same query comes back empty, because the Collector filtered it out before export.
-<img width="2498" height="1189" alt="image" src="https://github.com/user-attachments/assets/929c6991-88c3-4496-bcbd-d3e860fe2516" />
+**Before and after**
 
-**4. The `metricstransform` processor reshapes metrics, including renaming them.**
+To see the filter in action, let's compare this metric in Prometheus before and after processing.
+
+<img width="2049" height="1150" alt="Before processing: the Prometheus query v8js_memory_heap_space_physical_size_bytes returns one row per V8 heap space. An arrow points from the query to the matching filter/exclude_metrics condition in the Collector configuration" src="images/filter-before-processing.jpg" />
+
+Here's the before view from our bare-bones setup. We queried `v8js_memory_heap_space_physical_size_bytes` in Prometheus, and it returned one row for each memory area in V8.
+
+Notice that the name looks a little different from the one in our config. The Prometheus exporter replaces dots with underscores. It also adds the unit at the end, which is `_bytes` here.
+
+Now let's run the same query in the live Prometheus UI. Go to http://localhost:9090 and type this query into the query bar at the top of the page:
+
 ```
-metricstransform:
-    transforms:
-      - include: http.server.duration
-        action: update
-        new_name: http.server.request.duration
+v8js_memory_heap_space_physical_size_bytes
 ```
-OpenTelemetry's semantic conventions keep evolving, and metric names occasionally shift from one version to the next. Using this processor, we rename `http.server.duration` to `http.server.request.duration` so our telemetry stays current, and we do it without touching a line of application code.
 
-We can confirm the rename in Prometheus by querying the old name and the new name. Querying the old name returns data before the processor is applied.
+Then click **Execute**.
 
-<img width="2501" height="1306" alt="image" src="https://github.com/user-attachments/assets/4f30d9a0-d762-48ee-9c51-246332c436e0" />
+<img width="2049" height="1150" alt="After processing: the same Prometheus query returns an empty query result" src="images/filter-after-processing.jpg" />
 
-But afterward that same query comes back empty, since the metric no longer goes by that name. 
-<img width="2498" height="1195" alt="image" src="https://github.com/user-attachments/assets/7ad770b8-7349-457d-962e-6239add16935" />
+This time, Prometheus comes back empty. That's because the `filter` processor drops this metric inside the Collector, so it never reaches Prometheus.
 
-Query the new name instead and the data reappears.
+And since we only targeted this one metric, the rest of our memory metrics are still there. Try querying `v8js_memory_heap_used_bytes` to see one of them.
 
-<img width="2499" height="1191" alt="image" src="https://github.com/user-attachments/assets/c0c67874-8db2-4b4b-a727-804dba827a34" />
+That covers both of our processors. Before we see how they fit into the pipeline, let's scroll down to the exporters.
 
-One detail worth calling out is that the name in Prometheus doesn't match the one in our config. In the Collector configuration it's `http.server.request.duration`, but in Prometheus it shows up as `http_server_request_duration_milliseconds_count` (highlighted in orange). 
+### Why there's no batching for Prometheus
 
-<img width="2502" height="1124" alt="image" src="https://github.com/user-attachments/assets/f952efc3-31d7-41b8-a976-6a52f37e7b5e" />
+```yaml
+# otel/otel-collector-config.yaml
+exporters:
+  debug:
+    verbosity: detailed
 
-That's the Prometheus exporter doing its job. On the way out it rewrites names to follow Prometheus conventions, swapping dots for underscores and tacking on the unit and metric-type suffix. That's how `http.server.request.duration` ends up as `http_server_request_duration_milliseconds_count`.
+  otlp_grpc/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+    sending_queue:
+      sizer: items
+      batch:
+        flush_timeout: 5s
+        min_size: 512
 
-<img width="2505" height="1407" alt="image" src="https://github.com/user-attachments/assets/aff1d31c-9bd3-4207-9778-38d13402997e" />
-
-**5. The `batch` processor groups telemetry into batches before exporting.**
+  prometheus:
+    endpoint: 0.0.0.0:8889
 ```
-batch:
-    timeout: 5s
-    send_batch_size: 512
+
+You might notice something missing from our `prometheus` exporter.
+
+We configured [batching](../traces/README.md#batching-in-the-exporter) for the `otlp_grpc/jaeger` exporter in the traces episode, but not for Prometheus.
+
+That's because Jaeger and Prometheus get their data in different ways.
+
+<img width="1280" height="706" alt="Push vs pull: the Collector pushes traces to Jaeger in batches, while Prometheus pulls, or scrapes, metrics from the Collector on port 8889" src="images/push-vs-pull.gif" />
+
+With Jaeger, the Collector **pushes** traces to the backend. Batching lets it send fewer, larger requests.
+
+With Prometheus, it works the other way around. The Collector makes our metrics available on port `8889`, and Prometheus **pulls** them in on its own schedule. That's what we mean by scraping.
+
+We set that schedule in Prometheus's own configuration file, `otel/prometheus.yaml`:
+
+```yaml
+# otel/prometheus.yaml
+global:
+  scrape_interval: 15s
 ```
-We first introduced this one in the traces processing episode, and it behaves identically here. It gathers telemetry into groups before export. That's far more efficient than shipping each item on its own. Batching is a standard best practice for any production-bound Collector. 
 
-You'll spot it in both pipelines. In the traces pipeline it groups spans, and in the metrics pipeline it groups metric data points. Each pipeline handles its own signal on its own, so spans and metrics are never bundled into the same batch.
+The `scrape_interval` tells Prometheus to collect our metrics from the Collector every 15 seconds.
 
-_Note: the OpenTelemetry Collector is migrating batching into the exporter's sending queue, and the standalone batch processor is slated for deprecation. For now it remains a common, widely used choice._
+Since Prometheus decides when to collect the metrics, the Collector doesn't push anything, so there's nothing to batch on the way out.
 
-**The `service` component is what ties everything together, connecting our receivers, processors, and exporters into an actual pipeline.**
+### Service
 
-One thing to keep in mind is that defining a processor up in the top-level `processors` section only makes it available. It doesn't put it to work. A processor runs only when we list it inside a pipeline, and that list pulls double duty. It decides both which processors run and the order they run in.
-```
+```yaml
+# otel/otel-collector-config.yaml
 service:
   pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource, attributes/traces]
+      exporters: [debug, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp]
-      processors: [resource, filter/exclude_metrics, attributes/metrics, metricstransform, batch]
+      processors: [resource, filter/exclude_metrics]
       exporters: [debug, prometheus]
 ```
 
-**IMPORTANT**
+As we saw in the last episode, the `service` section is where everything comes together.
 
-Processors run in the exact order they're listed in the pipeline, so for our metrics that's `resource`, then `filter/exclude_metrics`, then `attributes/metrics`, then `metricstransform`, and finally `batch`.
-- Filtering comes **early** on purpose. We drop the metrics we don't want before spending any effort transforming the ones we're keeping.
-- `batch` is listed **last** so it groups the fully-processed telemetry right before it leaves the Collector.
+Our metrics pipeline connects our receiver, our two processors, and our exporters. Listing the processors here is what turns them on, and they run in the order we list them, `resource` first, then `filter/exclude_metrics`.
 
-With these processors in place, our Collector is no longer just passing data through. It's actively transforming our telemetry, adding useful context, dropping metrics we don't need, removing low-value or sensitive labels, renaming metrics to match current conventions, and preparing our metrics for efficient export.
+<img width="1280" height="706" alt="Metrics pipeline with processors: every 10 seconds, the Roll the Dice app sends metrics to the Collector's otlp receiver. The resource processor adds the environment and drops host and process details, then the filter/exclude_metrics processor drops the metric we don't need. The remaining metrics go to the debug exporter, which prints them to the terminal, and the prometheus exporter, which makes them available for Prometheus to scrape" src="images/metrics-pipeline-with-processors.gif" />
 
-In this episode, we put processors to work transforming our metrics inside the OpenTelemetry Collector. 
+Let's put it all together.
+- Every ten seconds, our app sends metrics to the **`otlp`** receiver.
+- The **`resource`** processor adds our environment and drops the host and process details.
+- The **`filter/exclude_metrics`** processor drops the metric we don't need.
+- The **`debug`** exporter prints the remaining metrics to the terminal.
+- The **`prometheus`** exporter makes them available for Prometheus to scrape.
 
-In the next one, we'll shift our focus to the third signal, logs, and see how to collect, process, and export them with OpenTelemetry.
+And that's how we cleaned up and filtered our metrics, all without changing a single line of our app's code!
+
+In the next episode, we'll move on to our third signal, logs. We'll instrument our app for logs and build a bare-bones pipeline for them.
