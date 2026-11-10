@@ -503,6 +503,8 @@ Let's look at the configuration to see what's changed.
 
 In your code editor, open the `javascript/metrics/add-processors` folder. Then open `otel/otel-collector-config.yaml`.
 
+> **Quick heads-up.** Just like in the last episode, the snippets below only show the metrics-related bits. Your actual file also includes the `attributes/traces` processor and the traces pipeline from the earlier episodes. We've just trimmed them out here so it's easier to focus on metrics.
+
 ```yaml
 # otel/otel-collector-config.yaml
 receivers:
@@ -536,19 +538,6 @@ processors:
       - key: process.pid
         action: delete
 
-  attributes/traces:
-    actions:
-      - key: user_agent.original
-        action: delete
-      - key: client.address
-        action: delete
-      - key: network.peer.address
-        action: delete
-      - key: server.port
-        action: delete
-      - key: network.peer.port
-        action: delete
-
   filter/exclude_metrics:
     error_mode: ignore
     metrics:
@@ -574,10 +563,6 @@ exporters:
 
 service:
   pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [resource, attributes/traces]
-      exporters: [debug, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp]
       processors: [resource, filter/exclude_metrics]
@@ -586,7 +571,7 @@ service:
 
 Our bare-bones configuration had receivers, exporters, and a `service` section. Now we've added a fourth section, `processors`.
 
-You'll see our traces processors here too, but we'll focus on the two used by our metrics pipeline. The `resource` processor will look familiar from traces. The `filter` processor is new.
+Our metrics pipeline uses two processors. The `resource` processor will look familiar from traces. The `filter` processor is new.
 
 Let's start with the `resource` processor.
 
@@ -758,10 +743,6 @@ Since Prometheus decides when to collect the metrics, the Collector doesn't push
 # otel/otel-collector-config.yaml
 service:
   pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [resource, attributes/traces]
-      exporters: [debug, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp]
       processors: [resource, filter/exclude_metrics]
