@@ -225,6 +225,8 @@ exporters:
   debug:
     verbosity: detailed
 
+  # ...otlp_grpc/jaeger exporter from the earlier episodes...
+
   prometheus:
     endpoint: 0.0.0.0:8889
 ```
@@ -538,6 +540,8 @@ processors:
       - key: process.pid
         action: delete
 
+  # ...attributes/traces processor from the earlier episodes...
+
   filter/exclude_metrics:
     error_mode: ignore
     metrics:
@@ -563,6 +567,7 @@ exporters:
 
 service:
   pipelines:
+    # ...traces pipeline from the earlier episodes...
     metrics:
       receivers: [otlp]
       processors: [resource, filter/exclude_metrics]
@@ -743,6 +748,7 @@ Since Prometheus decides when to collect the metrics, the Collector doesn't push
 # otel/otel-collector-config.yaml
 service:
   pipelines:
+    # ...traces pipeline from the earlier episodes...
     metrics:
       receivers: [otlp]
       processors: [resource, filter/exclude_metrics]
