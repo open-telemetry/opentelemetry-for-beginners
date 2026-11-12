@@ -7,7 +7,7 @@ This guide is where the series begins. It covers what OpenTelemetry is, an overv
 ## Prerequisites
 
 Before getting started, make sure you have installed:
-- [Node.js](https://nodejs.org/en/download/)
+- [Node.js](https://nodejs.org/en/download/) version 22.15.0 or newer
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/), which includes Docker Compose
 
 > **On Linux without Docker Desktop?** Install [Docker Engine](https://docs.docker.com/engine/install/) and the [Docker Compose plugin](https://docs.docker.com/compose/install/linux/) instead.
