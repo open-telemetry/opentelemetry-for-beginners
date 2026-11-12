@@ -75,6 +75,8 @@ npm start
 
 **Terminal 2: restart the Collector and Jaeger, now with Prometheus**
 
+> First, press **Ctrl + C** to stop the running Docker Compose session.
+
 ```bash
 docker compose down
 cd ../../metrics/bare-bones-setup
@@ -480,6 +482,8 @@ npm start
 The `add-processors` folder has its own dependencies, so we run `npm install` before starting the app.
 
 **Terminal 2: restart the Collector, Jaeger, and Prometheus**
+
+> First, press **Ctrl + C** to stop the running Docker Compose session.
 
 ```bash
 docker compose down
