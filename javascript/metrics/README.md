@@ -728,7 +728,7 @@ We configured [batching](../traces/README.md#batching-in-the-exporter) for the `
 
 That's because Jaeger and Prometheus get their data in different ways.
 
-<img width="1280" height="706" alt="Push vs pull: the Collector pushes traces to Jaeger in batches, while Prometheus pulls, or scrapes, metrics from the Collector on port 8889" src="images/push-vs-pull.gif" />
+<img width="1280" height="717" alt="Push vs pull: the Collector pushes traces to Jaeger, batched with sending_queue, while Prometheus scrapes metrics from the Collector on port 8889 every 15 seconds, so there's nothing to batch" src="images/push-vs-pull.gif" />
 
 With Jaeger, the Collector **pushes** traces to the backend. Batching lets it send fewer, larger requests.
 
@@ -774,4 +774,4 @@ Let's put it all together.
 
 And that's how we cleaned up and filtered our metrics, all without changing a single line of our app's code!
 
-In the next episode, we'll move on to our third signal, logs. We'll instrument our app for logs and build a bare-bones pipeline for them.
+In the next episode, we'll move on to our third signal, logs. We'll instrument our app for logs and build a bare-bones pipeline for them. Continue with the [Logs walkthrough](../logs/README.md).
