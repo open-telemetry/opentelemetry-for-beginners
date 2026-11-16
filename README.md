@@ -1,5 +1,7 @@
 # OpenTelemetry for Beginners
 
+<img width="1280" height="584" alt="OpenTelemetry for Beginners: the series logo, a blue and yellow telescope, appears above the title" src="images/opentelemetry-for-beginners-intro.gif" />
+
 Getting started with OpenTelemetry can feel overwhelming. This beginner series walks you through it step by step, from what OpenTelemetry is to building pipelines for traces, metrics, and logs with the OpenTelemetry Collector.
 
 Watch the series on the [OpenTelemetry YouTube channel](https://youtu.be/iEEIabOha8U?feature=shared), and follow along with the code and walkthroughs in this repo.
