@@ -1,0 +1,119 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Add/modify resource-level attributes (applies to traces, metrics, and logs)
+  resource:
+    attributes:
+      - key: deployment.environment.name
+        value: local
+        action: insert
+      - key: host.arch
+        action: delete
+      - key: host.id
+        action: delete
+      - key: host.name
+        action: delete
+      - key: process.command
+        action: delete
+      - key: process.command_args
+        action: delete
+      - key: process.executable.path
+        action: delete
+      - key: process.owner
+        action: delete
+      - key: process.pid
+        action: delete
+
+  # Modify span attributes (for traces)
+  attributes/traces:
+    actions:
+      - key: user_agent.original
+        action: delete
+      - key: client.address
+        action: delete
+      - key: network.peer.address
+        action: delete
+      - key: server.port
+        action: delete
+      - key: network.peer.port
+        action: delete
+
+  # Drop metrics we don't need to reduce telemetry volume
+  filter/exclude_metrics:
+    error_mode: ignore
+    metrics:
+      metric:
+        # Drop a low-level V8 internal metric most apps don't need.
+        # The per-heap-space physical size is deep engine detail. The
+        # useful memory signal (v8js.memory.heap.used) stays.
+        - 'name == "v8js.memory.heap.space.physical_size"'
+
+  # Rewrite log records with OTTL (for logs).
+  # Rolling a 1 is our "losing" roll, so we raise it from INFO to WARN.
+  # This makes the noteworthy events stand out and sets up the filter below.
+  transform/logs:
+    log_statements:
+      - set(log.severity_number, SEVERITY_NUMBER_WARN) where log.attributes["dice.value"] == 1
+      - set(log.severity_text, "WARN") where log.attributes["dice.value"] == 1
+
+  # Drop low-severity log noise (for logs).
+  # Keep only WARN and above so routine INFO rolls don't fill up storage.
+  # The filter processor drops any record that matches the condition.
+  filter/logs:
+    log_conditions:
+      - 'log.severity_number < SEVERITY_NUMBER_WARN'
+
+exporters:
+  debug:
+    verbosity: detailed
+
+  # Jaeger receives our traces. Batching is handled here at the exporter
+  # level (sending_queue.batch) instead of a standalone batch processor.
+  otlp_grpc/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+    sending_queue:
+      sizer: items
+      batch:
+        flush_timeout: 5s
+        min_size: 512
+
+  # Prometheus scrapes the Collector (pull-based), so there's nothing to batch
+  # on the way out. No batch processor and no sending_queue on this exporter.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+  # OpenSearch stores our logs. Batching for logs is handled here at the
+  # exporter level (sending_queue.batch) instead of a standalone batch
+  # processor. This is the modern replacement the Collector is moving toward.
+  opensearch:
+    http:
+      endpoint: http://opensearch:9200
+    logs_index: otel-logs
+    sending_queue:
+      sizer: items
+      batch:
+        flush_timeout: 5s
+        min_size: 512
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource, attributes/traces]
+      exporters: [debug, otlp_grpc/jaeger]
+    metrics:
+      receivers: [otlp]
+      processors: [resource, filter/exclude_metrics]
+      exporters: [debug, prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [resource, transform/logs, filter/logs]
+      exporters: [debug, opensearch]
