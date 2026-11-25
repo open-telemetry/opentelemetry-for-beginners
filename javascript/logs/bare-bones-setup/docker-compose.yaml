@@ -18,7 +18,7 @@ services:
       - otel-collector
 
   opensearch:
-    image: opensearchproject/opensearch:latest@sha256:3b55f6b6249cfdb92b52ee59adc8a266203ba9ef9f5d82544fad6f1af2f3609e
+    image: opensearchproject/opensearch:latest@sha256:02358b2be62b268a404a54581184d027ac0dfa8f875be15fe4c4fa3f8884f464
     environment:
       - discovery.type=single-node
       - DISABLE_SECURITY_PLUGIN=true        # no TLS/auth for local learning
