@@ -29,7 +29,7 @@ services:
       - "9600:9600"     # Performance Analyzer
 
   opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:latest@sha256:256d4cea5928868ac09bca642a0ac8285a2b7e4b7fdd45c4ec06e75a5cf3184c
+    image: opensearchproject/opensearch-dashboards:latest@sha256:90e839fc7fb3ac80fbe87b0a08fe378ed9b7cb52fcbafa08840915f2b152bcf1
     environment:
       - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
       - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
